@@ -620,6 +620,8 @@ class _SongListItemState extends State<_SongListItem> {
 
   void _handleMenuAction(_SongMenuAction action) {
     switch (action) {
+      case _SongMenuAction.add:
+        widget.onAddToPlaylist();
       case _SongMenuAction.info:
         _showProperties();
     }
@@ -794,6 +796,11 @@ class _SongListItemState extends State<_SongListItem> {
                               highlighted: true,
                               items: const [
                                 AppMenuEntry(
+                                  value: _SongMenuAction.add,
+                                  label: 'Add',
+                                  icon: Icons.playlist_add,
+                                ),
+                                AppMenuEntry(
                                   value: _SongMenuAction.info,
                                   label: 'Info',
                                   icon: Icons.info_outline,
@@ -957,4 +964,4 @@ extension<T> on Iterable<T> {
   T? get firstOrNull => isEmpty ? null : first;
 }
 
-enum _SongMenuAction { info }
+enum _SongMenuAction { add, info }

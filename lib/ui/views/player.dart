@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../models/webdav_config.dart';
+import '../../services/app_notifications.dart';
 import '../../src/rust/api/player_api.dart';
 import '../../state/app_state.dart';
 import '../../theme/app_theme.dart';
+import '../widgets/app_dialogs.dart';
 import '../widgets/tech_panel.dart';
 
 class PlayerView extends StatelessWidget {
@@ -133,6 +135,17 @@ class _NowPlayingPanel extends StatelessWidget {
             error: (_) => 'FAULT',
           );
 
+    Future<void> openAddToPlaylistDialog() async {
+      final track = currentTrack;
+      if (track == null) {
+        return;
+      }
+      await showDialog<void>(
+        context: context,
+        builder: (context) => _PlayerAddToPlaylistDialog(song: track),
+      );
+    }
+
     return TechPanel(
       delay: const Duration(milliseconds: 100),
       child: LayoutBuilder(
@@ -224,6 +237,16 @@ class _NowPlayingPanel extends StatelessWidget {
                         child: Stack(
                           alignment: Alignment.center,
                           children: [
+                            Positioned(
+                              left: 0,
+                              child: _RectControlButton(
+                                icon: Icons.playlist_add,
+                                color: SciFiColors.primaryYel,
+                                onPressed: currentTrack == null
+                                    ? null
+                                    : openAddToPlaylistDialog,
+                              ),
+                            ),
                             Row(
                               mainAxisAlignment: MainAxisAlignment.center,
                               mainAxisSize: MainAxisSize.max,
@@ -231,7 +254,7 @@ class _NowPlayingPanel extends StatelessWidget {
                                 _RectControlButton(
                                   icon: Icons.skip_previous,
                                   iconSize: 36,
-                                  onPressed: currentTrack == null || isLoading
+                                  onPressed: currentTrack == null
                                       ? null
                                       : () => appState.playPrevious(),
                                 ),
@@ -255,7 +278,7 @@ class _NowPlayingPanel extends StatelessWidget {
                                 _RectControlButton(
                                   icon: Icons.skip_next,
                                   iconSize: 36,
-                                  onPressed: currentTrack == null || isLoading
+                                  onPressed: currentTrack == null
                                       ? null
                                       : () => appState.playNext(),
                                 ),
@@ -270,7 +293,7 @@ class _NowPlayingPanel extends StatelessWidget {
                                   PlaybackMode.shuffle => Icons.shuffle,
                                 },
                                 color: SciFiColors.primaryYel,
-                                onPressed: currentTrack == null || isLoading
+                                onPressed: currentTrack == null
                                     ? null
                                     : appState.cyclePlaybackMode,
                               ),
@@ -590,5 +613,147 @@ class _RectControlButton extends StatelessWidget {
         ),
       ),
     );
+  }
+}
+
+class _PlayerAddToPlaylistDialog extends StatefulWidget {
+  final ScrapedSong song;
+
+  const _PlayerAddToPlaylistDialog({required this.song});
+
+  @override
+  State<_PlayerAddToPlaylistDialog> createState() =>
+      _PlayerAddToPlaylistDialogState();
+}
+
+class _PlayerAddToPlaylistDialogState extends State<_PlayerAddToPlaylistDialog> {
+  String? _selectedPlaylistId;
+  String? _errorMessage;
+  bool _isSubmitting = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final playlists = AppState().playlists;
+    return AppDialogShell(
+      width: 520,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          const AppDialogTitle(
+            title: 'PLAYLIST.ROUTER // IMPORT',
+            subtitle: 'QUEUE CURRENT TRACK INTO AN EXISTING PLAYLIST.',
+          ),
+          const SizedBox(height: 20),
+          if (_errorMessage != null)
+            Padding(
+              padding: const EdgeInsets.only(bottom: 12),
+              child: Text(
+                _errorMessage!,
+                style: GoogleFonts.shareTechMono(
+                  color: SciFiColors.errorRed,
+                  fontSize: 11,
+                ),
+              ),
+            ),
+          if (playlists.isNotEmpty) ...[
+            DropdownButtonFormField<String>(
+              initialValue: _selectedPlaylistId,
+              dropdownColor: SciFiColors.surfaceLight,
+              style: GoogleFonts.shareTechMono(color: SciFiColors.textMain),
+              decoration: InputDecoration(
+                labelText: 'TARGET PLAYLIST',
+                labelStyle: GoogleFonts.shareTechMono(
+                  color: SciFiColors.textDim,
+                ),
+                enabledBorder: const OutlineInputBorder(
+                  borderSide: BorderSide(color: SciFiColors.gridLines),
+                  borderRadius: BorderRadius.zero,
+                ),
+                focusedBorder: const OutlineInputBorder(
+                  borderSide: BorderSide(color: SciFiColors.primaryYel),
+                  borderRadius: BorderRadius.zero,
+                ),
+              ),
+              items: playlists
+                  .map(
+                    (playlist) => DropdownMenuItem<String>(
+                      value: playlist.id,
+                      child: Text(playlist.name),
+                    ),
+                  )
+                  .toList(),
+              onChanged: (value) => setState(() => _selectedPlaylistId = value),
+            ),
+          ] else
+            Text(
+              'NO PLAYLIST AVAILABLE. CREATE ONE IN THE PLAYLIST PAGE FIRST.',
+              style: GoogleFonts.shareTechMono(
+                color: SciFiColors.textDim,
+                fontSize: 11,
+                letterSpacing: 1.3,
+                height: 1.5,
+              ),
+            ),
+          const SizedBox(height: 20),
+          Container(
+            decoration: BoxDecoration(
+              border: Border.all(color: SciFiColors.gridLines),
+              color: SciFiColors.background,
+            ),
+            child: ListTile(
+              dense: true,
+              title: Text(
+                widget.song.title,
+                style: GoogleFonts.shareTechMono(
+                  color: SciFiColors.textMain,
+                  fontSize: 12,
+                ),
+              ),
+              subtitle: Text(
+                widget.song.artist,
+                style: GoogleFonts.shareTechMono(
+                  color: SciFiColors.textDim,
+                  fontSize: 10,
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(height: 20),
+          AppDialogActions(
+            confirmLabel: 'IMPORT',
+            isLoading: _isSubmitting,
+            onCancel: () => Navigator.of(context).pop(),
+            onConfirm: _submit,
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _submit() async {
+    setState(() {
+      _isSubmitting = true;
+      _errorMessage = null;
+    });
+    final playlistId = _selectedPlaylistId;
+    final error = playlistId == null
+        ? 'Select an existing playlist first.'
+        : await AppState().addSongsToPlaylist(
+            playlistId: playlistId,
+            songs: [widget.song],
+          );
+    if (!mounted) {
+      return;
+    }
+    if (error != null) {
+      setState(() {
+        _isSubmitting = false;
+        _errorMessage = error;
+      });
+      return;
+    }
+    Navigator.of(context).pop();
+    AppNotifications.instance.showInfo('IMPORTED 1 TRACK TO PLAYLIST');
   }
 }

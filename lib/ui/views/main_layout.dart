@@ -321,7 +321,7 @@ class _MainLayoutState extends State<MainLayout> {
                                 ],
                                 _RectToolbarButton(
                                   icon: Icons.skip_previous,
-                                  onPressed: currentTrack == null || isLoading
+                                  onPressed: currentTrack == null
                                       ? null
                                       : () => AppState().playPrevious(),
                                 ),
@@ -342,7 +342,7 @@ class _MainLayoutState extends State<MainLayout> {
                                 const SizedBox(width: 8),
                                 _RectToolbarButton(
                                   icon: Icons.skip_next,
-                                  onPressed: currentTrack == null || isLoading
+                                  onPressed: currentTrack == null
                                       ? null
                                       : () => AppState().playNext(),
                                 ),
