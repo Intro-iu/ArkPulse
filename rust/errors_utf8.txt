@@ -1,0 +1,210 @@
+﻿cargo :     Checking rust_lib_arkpulse v0.1.0 (E
+:\Projects\arkpulse\rust)
+所在位置 行:1 字符: 1
++ cargo check 2> errors.txt
++ ~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (   
+     Checking ru...\arkpulse\rust):String) [],  
+   RemoteException
+    + FullyQualifiedErrorId : NativeCommandErro 
+   r
+ 
+error[E0432]: unresolved imports `rodio::OutputS
+tream`, `rodio::Sink`
+ --> src\api\player_api.rs:5:13
+  |
+5 | use rodio::{OutputStream, Sink, Decoder};
+  |             ^^^^^^^^^^^^  ^^^^ no `Sink` in 
+the root
+  |             |
+  |             no `OutputStream` in the root
+  |
+  = help: consider importing one of these struct
+s instead:
+          std::io::Sink
+          tokio::io::Sink
+
+error[E0599]: no method named `lock` found for s
+truct `GLOBAL_SINK` in the current scope
+  --> src\api\player_api.rs:45:41
+   |
+30 | / lazy_static! {
+31 | |     // Sink is Send, so we can store it i
+n a Tokio Mutex perfectly
+32 | |     static ref GLOBAL_SINK: Arc<Mutex<Opt
+ion<Sink>>> = Arc::new(Mutex::new(None));
+33 | |     static ref PLAYER_STATE: Arc<Mutex<Pl
+aybackState>> = Arc::new(Mutex::new(PlaybackStat
+e::Stopped));
+34 | | }
+   | |_- method `lock` not found for this struct
+...
+45 |           let mut sink_lock = GLOBAL_SINK.l
+ock().await;
+   |                                           ^
+^^^ method not found in `GLOBAL_SINK`
+   |
+   = help: items from traits can only be used if
+ the trait is implemented and in scope
+   = note: the following trait defines an item `
+lock`, perhaps you need to implement it:
+           candidate #1: `lock_api::mutex::RawMu
+tex`
+
+error[E0282]: type annotations needed
+  --> src\api\player_api.rs:45:13
+   |
+45 |         let mut sink_lock = GLOBAL_SINK.loc
+k().await;
+   |             ^^^^^^^^^^^^^
+46 |         if sink_lock.is_none() {
+   |            --------- type must be known at 
+this point
+   |
+help: consider giving `sink_lock` an explicit ty
+pe
+   |
+45 |         let mut sink_lock: /* Type */ = GLO
+BAL_SINK.lock().await;
+   |                          ++++++++++++
+
+error[E0599]: no method named `lock` found for s
+truct `GLOBAL_SINK` in the current scope
+  --> src\api\player_api.rs:80:37
+   |
+30 | / lazy_static! {
+31 | |     // Sink is Send, so we can store it i
+n a Tokio Mutex perfectly
+32 | |     static ref GLOBAL_SINK: Arc<Mutex<Opt
+ion<Sink>>> = Arc::new(Mutex::new(None));
+33 | |     static ref PLAYER_STATE: Arc<Mutex<Pl
+aybackState>> = Arc::new(Mutex::new(PlaybackStat
+e::Stopped));
+34 | | }
+   | |_- method `lock` not found for this struct
+...
+80 |           let sink_lock = GLOBAL_SINK.lock(
+).await;
+   |                                       ^^^^ 
+method not found in `GLOBAL_SINK`
+   |
+   = help: items from traits can only be used if
+ the trait is implemented and in scope
+   = note: the following trait defines an item `
+lock`, perhaps you need to implement it:
+           candidate #1: `lock_api::mutex::RawMu
+tex`
+
+error[E0282]: type annotations needed
+  --> src\api\player_api.rs:86:13
+   |
+86 |             sink.stop();
+   |             ^^^^ cannot infer type
+
+error[E0599]: no method named `lock` found for s
+truct `GLOBAL_SINK` in the current scope
+  --> src\api\player_api.rs:98:37
+   |
+30 | / lazy_static! {
+31 | |     // Sink is Send, so we can store it i
+n a Tokio Mutex perfectly
+32 | |     static ref GLOBAL_SINK: Arc<Mutex<Opt
+ion<Sink>>> = Arc::new(Mutex::new(None));
+33 | |     static ref PLAYER_STATE: Arc<Mutex<Pl
+aybackState>> = Arc::new(Mutex::new(PlaybackStat
+e::Stopped));
+34 | | }
+   | |_- method `lock` not found for this struct
+...
+98 |           let sink_lock = GLOBAL_SINK.lock(
+).await;
+   |                                       ^^^^ 
+method not found in `GLOBAL_SINK`
+   |
+   = help: items from traits can only be used if
+ the trait is implemented and in scope
+   = note: the following trait defines an item `
+lock`, perhaps you need to implement it:
+           candidate #1: `lock_api::mutex::RawMu
+tex`
+
+error[E0282]: type annotations needed
+   --> src\api\player_api.rs:100:13
+    |
+100 |             sink.pause();
+    |             ^^^^ cannot infer type
+
+error[E0599]: no method named `lock` found for s
+truct `GLOBAL_SINK` in the current scope
+   --> src\api\player_api.rs:106:37
+    |
+ 30 | / lazy_static! {
+ 31 | |     // Sink is Send, so we can store it 
+in a Tokio Mutex perfectly
+ 32 | |     static ref GLOBAL_SINK: Arc<Mutex<Op
+tion<Sink>>> = Arc::new(Mutex::new(None));
+ 33 | |     static ref PLAYER_STATE: Arc<Mutex<P
+laybackState>> = Arc::new(Mutex::new(PlaybackSta
+te::Stopped));
+ 34 | | }
+    | |_- method `lock` not found for this struc
+t
+...
+106 |           let sink_lock = GLOBAL_SINK.lock
+().await;
+    |                                       ^^^^
+ method not found in `GLOBAL_SINK`
+    |
+    = help: items from traits can only be used i
+f the trait is implemented and in scope
+    = note: the following trait defines an item 
+`lock`, perhaps you need to implement it:
+            candidate #1: `lock_api::mutex::RawM
+utex`
+
+error[E0282]: type annotations needed
+   --> src\api\player_api.rs:108:13
+    |
+108 |             sink.play();
+    |             ^^^^ cannot infer type
+
+error[E0599]: no method named `lock` found for s
+truct `GLOBAL_SINK` in the current scope
+   --> src\api\player_api.rs:114:37
+    |
+ 30 | / lazy_static! {
+ 31 | |     // Sink is Send, so we can store it 
+in a Tokio Mutex perfectly
+ 32 | |     static ref GLOBAL_SINK: Arc<Mutex<Op
+tion<Sink>>> = Arc::new(Mutex::new(None));
+ 33 | |     static ref PLAYER_STATE: Arc<Mutex<P
+laybackState>> = Arc::new(Mutex::new(PlaybackSta
+te::Stopped));
+ 34 | | }
+    | |_- method `lock` not found for this struc
+t
+...
+114 |           let sink_lock = GLOBAL_SINK.lock
+().await;
+    |                                       ^^^^
+ method not found in `GLOBAL_SINK`
+    |
+    = help: items from traits can only be used i
+f the trait is implemented and in scope
+    = note: the following trait defines an item 
+`lock`, perhaps you need to implement it:
+            candidate #1: `lock_api::mutex::RawM
+utex`
+
+error[E0282]: type annotations needed
+   --> src\api\player_api.rs:116:13
+    |
+116 |             sink.stop();
+    |             ^^^^ cannot infer type
+
+Some errors have detailed explanations: E0282, E
+0432, E0599.
+For more information about an error, try `rustc 
+--explain E0282`.
+error: could not compile `rust_lib_arkpulse` (li
+b) due to 11 previous errors
