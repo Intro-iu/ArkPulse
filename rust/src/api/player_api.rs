@@ -208,7 +208,7 @@ impl RuntimeMpv {
         runtime.set_option_string("vid", "no")?;
         runtime.set_option_string("audio-display", "no")?;
         runtime.set_option_string("keep-open", "no")?;
-        runtime.set_option_string("ytdl", "no")?;
+        let _ = runtime.set_option_string("ytdl", "no"); // optional: not all libmpv builds include ytdl
         runtime.set_option_string("cache", "yes")?;
         runtime.set_option_string("cache-on-disk", "yes")?;
         runtime.set_option_string("demuxer-readahead-secs", "4")?;
@@ -655,7 +655,7 @@ impl AudioPlayer {
 
 fn load_file(mpv: &RuntimeMpv, target: &str, options: Option<&str>) -> Result<(), String> {
     match options {
-        Some(options) => mpv.command_args(&["loadfile", target, "replace", "-1", options]),
+        Some(options) => mpv.command_args(&["loadfile", target, "replace", options]),
         None => mpv.command_args(&["loadfile", target, "replace"]),
     }
 }
@@ -1278,7 +1278,7 @@ fn same_origin(url: &str) -> Option<(String, String, u16)> {
 fn load_mpv_library() -> Result<Library, String> {
     let candidates = library_candidates();
     let mut last_error = None;
-    for candidate in candidates {
+    for candidate in &candidates {
         let attempt = unsafe { Library::new(candidate) };
         match attempt {
             Ok(library) => return Ok(library),
@@ -1287,24 +1287,44 @@ fn load_mpv_library() -> Result<Library, String> {
     }
     Err(format!(
         "Unable to load mpv runtime library. Tried: {}. Last error: {}",
-        library_candidates().join(", "),
+        candidates.join(", "),
         last_error.unwrap_or_else(|| "unknown".to_string())
     ))
 }
 
-fn library_candidates() -> Vec<&'static str> {
+fn library_candidates() -> Vec<String> {
+    let names: Vec<&str>;
     #[cfg(target_os = "windows")]
     {
-        vec!["mpv-2.dll", "libmpv-2.dll", "mpv.dll"]
+        names = vec!["mpv-2.dll", "libmpv-2.dll", "mpv.dll"];
     }
     #[cfg(target_os = "macos")]
     {
-        vec!["libmpv.2.dylib", "libmpv.dylib"]
+        names = vec!["libmpv.2.dylib", "libmpv.dylib"];
     }
     #[cfg(all(not(target_os = "windows"), not(target_os = "macos")))]
     {
-        vec!["libmpv.so.2", "libmpv.so"]
+        names = vec!["libmpv.so.2", "libmpv.so"];
     }
+
+    let mut candidates: Vec<String> = Vec::new();
+
+    // Try exe-relative paths first (where media_kit_libs bundles the DLL)
+    if let Ok(exe_path) = std::env::current_exe() {
+        if let Some(exe_dir) = exe_path.parent() {
+            for name in &names {
+                let full = exe_dir.join(name);
+                candidates.push(full.to_string_lossy().into_owned());
+            }
+        }
+    }
+
+    // Fall back to bare filenames (system PATH / LD_LIBRARY_PATH)
+    for name in &names {
+        candidates.push(name.to_string());
+    }
+
+    candidates
 }
 
 fn load_symbol<T: Copy>(library: &Library, name: &[u8]) -> Result<T, String> {

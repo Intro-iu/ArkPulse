@@ -76,20 +76,24 @@ class AppState extends ChangeNotifier {
   Future<void> initialize() async {
     if (_initialized) return;
 
-    await SMTCService.instance.init(
-      onPlay: () {
-        if (!_isTrackLoading) resumePlayback();
-      },
-      onPause: () {
-        if (!_isTrackLoading) pausePlayback();
-      },
-      onNext: () {
-        if (!_isTrackLoading) playNext();
-      },
-      onPrevious: () {
-        if (!_isTrackLoading) playPrevious();
-      },
-    );
+    try {
+      await SMTCService.instance.init(
+        onPlay: () {
+          if (!_isTrackLoading) resumePlayback();
+        },
+        onPause: () {
+          if (!_isTrackLoading) pausePlayback();
+        },
+        onNext: () {
+          if (!_isTrackLoading) playNext();
+        },
+        onPrevious: () {
+          if (!_isTrackLoading) playPrevious();
+        },
+      );
+    } catch (e) {
+      debugPrint('SMTC init failed (non-fatal): $e');
+    }
     final database = DatabaseService();
     final rows = await database.loadWebDavConfigs();
     for (final row in rows) {

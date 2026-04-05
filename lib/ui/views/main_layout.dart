@@ -61,14 +61,14 @@ class _MainLayoutState extends State<MainLayout> {
   Future<void> _initializeAudioBackend() async {
     try {
       await AudioPlayer.initEngine();
+      debugPrint('[ArkPulse] Audio backend initialized successfully');
     } catch (error) {
+      debugPrint('[ArkPulse] Audio backend init error: $error');
       if (_audioBackendErrorShown || !mounted) {
         return;
       }
       _audioBackendErrorShown = true;
-      AppNotifications.instance.showError(
-        'Audio backend unavailable. Bundle the mpv runtime library with this build.',
-      );
+      AppNotifications.instance.showError('Audio backend unavailable: $error');
     }
   }
 
