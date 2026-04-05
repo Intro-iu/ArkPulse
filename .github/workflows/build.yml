@@ -146,15 +146,26 @@ jobs:
           mv arkpulse-${{ env.APP_VERSION }}-1-x86_64.pkg.tar.zst "${{ matrix.artifact }}-${{ env.APP_VERSION }}.pkg.tar.zst"
 
       # ── Upload build artifact ─────────────────────────────────
-      - name: Upload build artifact
+      - name: Upload Windows Setup
+        if: matrix.target == 'windows'
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ matrix.artifact }}-${{ env.APP_VERSION }}
-          path: |
-            ${{ matrix.artifact }}-${{ env.APP_VERSION }}-setup.exe
-            ${{ matrix.artifact }}-${{ env.APP_VERSION }}.deb
-            ${{ matrix.artifact }}-${{ env.APP_VERSION }}.pkg.tar.zst
-          if-no-files-found: ignore
+          name: ${{ matrix.artifact }}-Setup-${{ env.APP_VERSION }}
+          path: ${{ matrix.artifact }}-${{ env.APP_VERSION }}-setup.exe
+
+      - name: Upload Linux DEB
+        if: matrix.target == 'linux'
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.artifact }}-DEB-${{ env.APP_VERSION }}
+          path: ${{ matrix.artifact }}-${{ env.APP_VERSION }}.deb
+
+      - name: Upload Linux Pacman
+        if: matrix.target == 'linux'
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.artifact }}-Pacman-${{ env.APP_VERSION }}
+          path: ${{ matrix.artifact }}-${{ env.APP_VERSION }}.pkg.tar.zst
 
   # ── Release (tag-triggered only) ────────────────────────────────
   release:
