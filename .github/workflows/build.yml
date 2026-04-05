@@ -1,0 +1,152 @@
+name: Build & Release
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  create:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+env:
+  FLUTTER_VERSION: '3.32.0'
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: windows-latest
+            target: windows
+            artifact: arkpulse-windows
+            build-cmd: flutter build windows --release
+            output-path: build/windows/x64/runner/Release
+          - os: ubuntu-latest
+            target: linux
+            artifact: arkpulse-linux
+            build-cmd: flutter build linux --release
+            output-path: build/linux/x64/release/bundle
+          # - os: macos-latest
+          #   target: macos
+          #   artifact: arkpulse-macos
+          #   build-cmd: flutter build macos --release
+          #   output-path: build/macos/Build/Products/Release
+
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # ── Determine version string ──────────────────────────────
+      - name: Set version from tag or commit
+        shell: bash
+        run: |
+          if [[ "${{ github.ref_type }}" == "tag" ]]; then
+            echo "APP_VERSION=${{ github.ref_name }}" >> $GITHUB_ENV
+          else
+            SHORT_SHA=$(echo "${{ github.sha }}" | cut -c1-7)
+            echo "APP_VERSION=dev-${SHORT_SHA}" >> $GITHUB_ENV
+          fi
+
+      # ── Install system dependencies ───────────────────────────
+      - name: Install Linux dependencies
+        if: matrix.target == 'linux'
+        run: |
+          sudo apt-get update -y
+          sudo apt-get install -y \
+            clang cmake git ninja-build pkg-config \
+            libgtk-3-dev liblzma-dev libstdc++-12-dev \
+            libmpv-dev mpv \
+            libgstreamer1.0-dev libgstreamer-plugins-base1.0-dev
+
+      # - name: Install macOS dependencies
+      #   if: matrix.target == 'macos'
+      #   run: brew install mpv
+
+      # ── Toolchains ────────────────────────────────────────────
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          channel: stable
+          cache: true
+
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Cache Rust build
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            rust/target
+          key: ${{ runner.os }}-cargo-${{ hashFiles('rust/Cargo.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-cargo-
+
+      # ── Build ─────────────────────────────────────────────────
+      - name: Install Flutter dependencies
+        run: flutter pub get
+
+      - name: Build application
+        run: ${{ matrix.build-cmd }}
+
+      # ── Package ───────────────────────────────────────────────
+      - name: Package artifact (Windows)
+        if: matrix.target == 'windows'
+        shell: pwsh
+        run: |
+          Compress-Archive -Path "${{ matrix.output-path }}/*" `
+            -DestinationPath "${{ matrix.artifact }}-${{ env.APP_VERSION }}.zip"
+
+      - name: Package artifact (Linux)
+        if: matrix.target == 'linux'
+        run: |
+          tar -czf "${{ matrix.artifact }}-${{ env.APP_VERSION }}.tar.gz" \
+            -C "${{ matrix.output-path }}" .
+
+      # - name: Package artifact (macOS)
+      #   if: matrix.target == 'macos'
+      #   run: |
+      #     cd "${{ matrix.output-path }}"
+      #     zip -r "$GITHUB_WORKSPACE/${{ matrix.artifact }}-${{ env.APP_VERSION }}.zip" arkpulse.app
+
+      # ── Upload build artifact ─────────────────────────────────
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.artifact }}-${{ env.APP_VERSION }}
+          path: |
+            ${{ matrix.artifact }}-${{ env.APP_VERSION }}.zip
+            ${{ matrix.artifact }}-${{ env.APP_VERSION }}.tar.gz
+          if-no-files-found: ignore
+
+  # ── Release (tag-triggered only) ────────────────────────────────
+  release:
+    needs: build
+    if: github.ref_type == 'tag'
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+          merge-multiple: true
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.ref_name }}
+          name: ArkPulse ${{ github.ref_name }}
+          draft: false
+          prerelease: false
+          files: artifacts/*
+          generate_release_notes: true
