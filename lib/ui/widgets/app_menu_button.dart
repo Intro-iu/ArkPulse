@@ -29,19 +29,18 @@ class AppMenuButton<T> extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
+    return Listener(
       behavior: HitTestBehavior.opaque,
-      onTapDown: (details) async {
-        final overlay = Overlay.of(context).context.findRenderObject() as RenderBox;
+      onPointerDown: (event) async {
+        if (event.buttons != 1) return; // Only process left click
+
+        final overlay =
+            Overlay.of(context).context.findRenderObject() as RenderBox;
         final result = await showMenu<T>(
           context: context,
+          elevation: 0,
           position: RelativeRect.fromRect(
-            Rect.fromLTWH(
-              details.globalPosition.dx,
-              details.globalPosition.dy,
-              1,
-              1,
-            ),
+            Rect.fromLTWH(event.position.dx, event.position.dy, 1, 1),
             Offset.zero & overlay.size,
           ),
           color: SciFiColors.surfaceLight,
@@ -61,11 +60,7 @@ class AppMenuButton<T> extends StatelessWidget {
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Icon(
-                        item.icon,
-                        size: 15,
-                        color: SciFiColors.primaryYel,
-                      ),
+                      Icon(item.icon, size: 15, color: SciFiColors.primaryYel),
                       const SizedBox(width: 8),
                       Text(
                         item.label,
@@ -84,18 +79,26 @@ class AppMenuButton<T> extends StatelessWidget {
           onSelected(result);
         }
       },
-      child: Container(
-        width: 36,
-        height: 36,
-        decoration: BoxDecoration(
-          border: Border.all(
-            color: highlighted ? SciFiColors.primaryYel : SciFiColors.gridLines,
+      child: MouseRegion(
+        cursor: SystemMouseCursors.click,
+        child: Container(
+          width: 36,
+          height: 36,
+          decoration: BoxDecoration(
+            border: Border.all(
+              color: highlighted
+                  ? SciFiColors.primaryYel
+                  : SciFiColors.gridLines.withValues(alpha: 0.5),
+            ),
+            color: highlighted
+                ? SciFiColors.primaryYelGlow.withValues(alpha: 0.05)
+                : Colors.transparent,
           ),
-        ),
-        child: Icon(
-          Icons.more_horiz,
-          size: 18,
-          color: highlighted ? SciFiColors.primaryYel : SciFiColors.textDim,
+          child: Icon(
+            Icons.more_horiz,
+            size: 18,
+            color: highlighted ? SciFiColors.primaryYel : SciFiColors.textDim,
+          ),
         ),
       ),
     );

@@ -6,7 +6,7 @@ import '../../state/app_state.dart';
 import '../../theme/app_theme.dart';
 import '../widgets/app_dialogs.dart';
 import '../widgets/app_menu_button.dart';
-import '../widgets/tech_panel.dart';
+import '../widgets/neo_brutalism/nb_panel.dart';
 
 class LibraryView extends StatefulWidget {
   const LibraryView({super.key});
@@ -103,14 +103,14 @@ class _LibraryViewState extends State<LibraryView> {
                   Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                      TechPanel(
+                      NbPanel(
                         height: 88,
-                        delay: const Duration(milliseconds: 50),
                         padding: const EdgeInsets.symmetric(
                           horizontal: 24,
                           vertical: 12,
                         ),
                         backgroundColor: SciFiColors.surfaceLight,
+                        shadowOffset: const Offset(8, 8),
                         child: Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
@@ -159,7 +159,8 @@ class _LibraryViewState extends State<LibraryView> {
                                       selectedPlaylistId: _selectedPlaylistId,
                                       onSelect: (playlistId) {
                                         setState(
-                                          () => _selectedPlaylistId = playlistId,
+                                          () =>
+                                              _selectedPlaylistId = playlistId,
                                         );
                                       },
                                       onDelete: (playlistId) async {
@@ -197,13 +198,14 @@ class _LibraryViewState extends State<LibraryView> {
                                       },
                                       onToggleTrackSelection:
                                           _toggleTrackSelection,
-                                      onEnterTrackSelection: _enterTrackSelection,
+                                      onEnterTrackSelection:
+                                          _enterTrackSelection,
                                       onRemoveSelectedTracks:
                                           selectedPlaylist == null
-                                              ? null
-                                              : () => _removeSelectedTracks(
-                                                    selectedPlaylist,
-                                                  ),
+                                          ? null
+                                          : () => _removeSelectedTracks(
+                                              selectedPlaylist,
+                                            ),
                                       onClearSelection: _clearTrackSelection,
                                     ),
                                   ),
@@ -227,9 +229,10 @@ class _EmptyLibraryState extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return TechPanel(
-      delay: const Duration(milliseconds: 150),
+    return NbPanel(
       backgroundColor: SciFiColors.surface.withValues(alpha: 0.5),
+      shadowOffset: const Offset(4, 4),
+      isFrosted: true,
       child: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -286,8 +289,10 @@ class _PlaylistListPanel extends StatelessWidget {
   Widget build(BuildContext context) {
     return Stack(
       children: [
-        TechPanel(
+        NbPanel(
+          padding: EdgeInsets.zero,
           backgroundColor: SciFiColors.surface,
+          shadowOffset: const Offset(6, 6),
           child: ListView.separated(
             padding: const EdgeInsets.fromLTRB(12, 12, 12, 84),
             itemCount: playlists.length,
@@ -341,8 +346,10 @@ class _PlaylistDetailPanel extends StatelessWidget {
 
     return Stack(
       children: [
-        TechPanel(
+        NbPanel(
+          padding: EdgeInsets.zero,
           backgroundColor: SciFiColors.surface,
+          shadowOffset: const Offset(6, 6),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
@@ -433,12 +440,10 @@ class _PlaylistDetailPanel extends StatelessWidget {
           Positioned(
             right: 16,
             bottom: 16,
-            child: TechPanel(
-              padding: const EdgeInsets.symmetric(
-                horizontal: 20,
-                vertical: 12,
-              ),
+            child: NbPanel(
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
               backgroundColor: SciFiColors.surface,
+              shadowOffset: const Offset(4, 4),
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
@@ -508,8 +513,12 @@ class _PlaylistListRowState extends State<_PlaylistListRow> {
   @override
   Widget build(BuildContext context) {
     final background = widget.isSelected
-        ? SciFiColors.primaryYelGlow
-        : (_isHovered ? SciFiColors.background : SciFiColors.surfaceLight);
+        ? Color.lerp(
+            SciFiColors.surfaceLight,
+            SciFiColors.primaryYelGlow,
+            0.08,
+          )!
+        : (_isHovered ? SciFiColors.surface : SciFiColors.surfaceLight);
 
     return MouseRegion(
       onEnter: (_) => setState(() => _isHovered = true),
@@ -523,7 +532,10 @@ class _PlaylistListRowState extends State<_PlaylistListRow> {
             border: Border.all(
               color: widget.isSelected
                   ? SciFiColors.primaryYel
-                  : (_isHovered ? SciFiColors.textDim : SciFiColors.gridLines),
+                  : (_isHovered
+                        ? SciFiColors.gridLines
+                        : SciFiColors.gridLines.withValues(alpha: 0.3)),
+              width: 1.0,
             ),
           ),
           padding: const EdgeInsets.all(12),
@@ -555,28 +567,38 @@ class _PlaylistListRowState extends State<_PlaylistListRow> {
                   ],
                 ),
               ),
-              AppMenuButton<_PlaylistRowMenuAction>(
-                highlighted: _isHovered,
-                items: const [
-                  AppMenuEntry(
-                    value: _PlaylistRowMenuAction.add,
-                    label: 'Add Tracks',
-                    icon: Icons.playlist_add,
+              SizedBox(
+                width: 36,
+                child: AnimatedOpacity(
+                  duration: const Duration(milliseconds: 120),
+                  opacity: _isHovered ? 1 : 0,
+                  child: IgnorePointer(
+                    ignoring: !_isHovered,
+                    child: AppMenuButton<_PlaylistRowMenuAction>(
+                      highlighted: _isHovered,
+                      items: const [
+                        AppMenuEntry(
+                          value: _PlaylistRowMenuAction.add,
+                          label: 'Add Tracks',
+                          icon: Icons.playlist_add,
+                        ),
+                        AppMenuEntry(
+                          value: _PlaylistRowMenuAction.delete,
+                          label: 'Delete',
+                          icon: Icons.delete_outline,
+                        ),
+                      ],
+                      onSelected: (value) {
+                        switch (value) {
+                          case _PlaylistRowMenuAction.add:
+                            widget.onAddTracks();
+                          case _PlaylistRowMenuAction.delete:
+                            _confirmDeletePlaylist();
+                        }
+                      },
+                    ),
                   ),
-                  AppMenuEntry(
-                    value: _PlaylistRowMenuAction.delete,
-                    label: 'Delete',
-                    icon: Icons.delete_outline,
-                  ),
-                ],
-                onSelected: (value) {
-                  switch (value) {
-                    case _PlaylistRowMenuAction.add:
-                      widget.onAddTracks();
-                    case _PlaylistRowMenuAction.delete:
-                      _confirmDeletePlaylist();
-                  }
-                },
+                ),
               ),
             ],
           ),
@@ -774,53 +796,51 @@ class _CreatePlaylistDialogState extends State<_CreatePlaylistDialog> {
   Widget build(BuildContext context) {
     return AppDialogShell(
       child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              const AppDialogTitle(
-                title: 'PLAYLIST.BOOTSTRAP',
-              ),
-              const SizedBox(height: 16),
-              if (_errorMessage != null)
-                Padding(
-                  padding: const EdgeInsets.only(bottom: 12),
-                  child: Text(
-                    _errorMessage!,
-                    style: GoogleFonts.shareTechMono(
-                      color: SciFiColors.errorRed,
-                      fontSize: 11,
-                    ),
-                  ),
-                ),
-              TextField(
-                controller: _controller,
-                style: GoogleFonts.shareTechMono(color: SciFiColors.textMain),
-                decoration: InputDecoration(
-                  hintText: 'e.g. FAVORITES // REMOTE',
-                  hintStyle: GoogleFonts.shareTechMono(
-                    color: SciFiColors.gridLines,
-                  ),
-                  enabledBorder: const OutlineInputBorder(
-                    borderSide: BorderSide(color: SciFiColors.gridLines),
-                    borderRadius: BorderRadius.zero,
-                  ),
-                  focusedBorder: const OutlineInputBorder(
-                    borderSide: BorderSide(color: SciFiColors.primaryYel),
-                    borderRadius: BorderRadius.zero,
-                  ),
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          const AppDialogTitle(title: 'PLAYLIST.BOOTSTRAP'),
+          const SizedBox(height: 16),
+          if (_errorMessage != null)
+            Padding(
+              padding: const EdgeInsets.only(bottom: 12),
+              child: Text(
+                _errorMessage!,
+                style: GoogleFonts.shareTechMono(
+                  color: SciFiColors.errorRed,
+                  fontSize: 11,
                 ),
               ),
-              const SizedBox(height: 16),
-              Align(
-                alignment: Alignment.centerRight,
-                child: AppDialogActions(
-                  confirmLabel: 'CREATE',
-                  onCancel: () => Navigator.of(context).pop(),
-                  onConfirm: _submit,
-                ),
+            ),
+          TextField(
+            controller: _controller,
+            style: GoogleFonts.shareTechMono(color: SciFiColors.textMain),
+            decoration: InputDecoration(
+              hintText: 'e.g. FAVORITES // REMOTE',
+              hintStyle: GoogleFonts.shareTechMono(
+                color: SciFiColors.gridLines,
               ),
-            ],
+              enabledBorder: const OutlineInputBorder(
+                borderSide: BorderSide(color: SciFiColors.gridLines),
+                borderRadius: BorderRadius.zero,
+              ),
+              focusedBorder: const OutlineInputBorder(
+                borderSide: BorderSide(color: SciFiColors.primaryYel),
+                borderRadius: BorderRadius.zero,
+              ),
+            ),
           ),
+          const SizedBox(height: 16),
+          Align(
+            alignment: Alignment.centerRight,
+            child: AppDialogActions(
+              confirmLabel: 'CREATE',
+              onCancel: () => Navigator.of(context).pop(),
+              onConfirm: _submit,
+            ),
+          ),
+        ],
+      ),
     );
   }
 
@@ -892,10 +912,7 @@ class _BatchActionButton extends StatelessWidget {
   final IconData icon;
   final VoidCallback onPressed;
 
-  const _BatchActionButton({
-    required this.icon,
-    required this.onPressed,
-  });
+  const _BatchActionButton({required this.icon, required this.onPressed});
 
   @override
   Widget build(BuildContext context) {
@@ -909,11 +926,7 @@ class _BatchActionButton extends StatelessWidget {
           decoration: BoxDecoration(
             border: Border.all(color: SciFiColors.gridLines),
           ),
-          child: Icon(
-            icon,
-            size: 18,
-            color: SciFiColors.textMain,
-          ),
+          child: Icon(icon, size: 18, color: SciFiColors.textMain),
         ),
       ),
     );
@@ -930,7 +943,8 @@ class _AddTracksToPlaylistDialog extends StatefulWidget {
       _AddTracksToPlaylistDialogState();
 }
 
-class _AddTracksToPlaylistDialogState extends State<_AddTracksToPlaylistDialog> {
+class _AddTracksToPlaylistDialogState
+    extends State<_AddTracksToPlaylistDialog> {
   final TextEditingController _searchController = TextEditingController();
   final Set<String> _selectedSongIds = {};
   String? _errorMessage;
@@ -949,13 +963,13 @@ class _AddTracksToPlaylistDialogState extends State<_AddTracksToPlaylistDialog> 
     final songs = query.isEmpty
         ? allSongs
         : allSongs
-            .where(
-              (song) =>
-                  song.title.toLowerCase().contains(query) ||
-                  song.artist.toLowerCase().contains(query) ||
-                  song.album.toLowerCase().contains(query),
-            )
-            .toList();
+              .where(
+                (song) =>
+                    song.title.toLowerCase().contains(query) ||
+                    song.artist.toLowerCase().contains(query) ||
+                    song.album.toLowerCase().contains(query),
+              )
+              .toList();
 
     return AppDialogShell(
       width: 560,
@@ -985,10 +999,15 @@ class _AddTracksToPlaylistDialogState extends State<_AddTracksToPlaylistDialog> 
             style: GoogleFonts.shareTechMono(color: SciFiColors.textMain),
             decoration: InputDecoration(
               hintText: 'SEARCH TRACKS...',
-              hintStyle: GoogleFonts.shareTechMono(color: SciFiColors.gridLines),
+              hintStyle: GoogleFonts.shareTechMono(
+                color: SciFiColors.gridLines,
+              ),
               filled: true,
               fillColor: SciFiColors.background,
-              prefixIcon: const Icon(Icons.search, color: SciFiColors.primaryYel),
+              prefixIcon: const Icon(
+                Icons.search,
+                color: SciFiColors.primaryYel,
+              ),
               enabledBorder: const OutlineInputBorder(
                 borderSide: BorderSide(color: SciFiColors.gridLines),
                 borderRadius: BorderRadius.zero,
@@ -1022,10 +1041,8 @@ class _AddTracksToPlaylistDialogState extends State<_AddTracksToPlaylistDialog> 
                 : ListView.separated(
                     shrinkWrap: true,
                     itemCount: songs.length,
-                    separatorBuilder: (_, _) => const Divider(
-                      height: 1,
-                      color: SciFiColors.gridLines,
-                    ),
+                    separatorBuilder: (_, _) =>
+                        const Divider(height: 1, color: SciFiColors.gridLines),
                     itemBuilder: (context, index) {
                       final song = songs[index];
                       final selected = _selectedSongIds.contains(song.id);

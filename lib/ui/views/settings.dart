@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import '../../theme/app_theme.dart';
 import '../widgets/app_dialogs.dart';
-import '../widgets/tech_panel.dart';
+import '../widgets/neo_brutalism/nb_panel.dart';
+import '../widgets/neo_brutalism/nb_button.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../state/app_state.dart';
 import '../../models/webdav_config.dart';
@@ -105,11 +106,11 @@ class _SettingsRoot extends StatelessWidget {
   }
 
   Widget _header() {
-    return TechPanel(
+    return NbPanel(
       height: 88,
-      delay: const Duration(milliseconds: 50),
       padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
       backgroundColor: SciFiColors.surfaceLight,
+      shadowOffset: const Offset(8, 8),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -155,76 +156,49 @@ class _SettingsItem extends StatefulWidget {
 }
 
 class _SettingsItemState extends State<_SettingsItem> {
-  bool _hovered = false;
-
   @override
   Widget build(BuildContext context) {
     final enabled = widget.onTap != null;
-    return MouseRegion(
-      cursor: enabled ? SystemMouseCursors.click : SystemMouseCursors.basic,
-      onEnter: (_) => setState(() => _hovered = true),
-      onExit: (_) => setState(() => _hovered = false),
-      child: GestureDetector(
-        onTap: widget.onTap,
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 120),
-          decoration: BoxDecoration(
-            border: Border.all(
-              color: _hovered && enabled
-                  ? SciFiColors.primaryYel
-                  : SciFiColors.gridLines,
+    return NbButton(
+      onPressed: enabled ? widget.onTap : null,
+      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
+      backgroundColor: SciFiColors.surfaceLight,
+      shadowOffset: const Offset(4, 4),
+      child: Row(
+        children: [
+          Icon(
+            widget.icon,
+            color: enabled ? SciFiColors.textMain : SciFiColors.textDim,
+            size: 24,
+          ),
+          const SizedBox(width: 24),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  widget.title,
+                  style: GoogleFonts.shareTechMono(
+                    color: enabled ? SciFiColors.textMain : SciFiColors.textDim,
+                    fontWeight: FontWeight.bold,
+                    letterSpacing: 1.5,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  widget.subtitle,
+                  style: GoogleFonts.shareTechMono(
+                    color: SciFiColors.textDim,
+                    fontSize: 11,
+                    letterSpacing: 1.0,
+                  ),
+                ),
+              ],
             ),
-            color: _hovered && enabled
-                ? SciFiColors.primaryYelGlow
-                : SciFiColors.surfaceLight,
           ),
-          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
-          child: Row(
-            children: [
-              Icon(
-                widget.icon,
-                color: enabled
-                    ? (_hovered ? SciFiColors.primaryYel : SciFiColors.textMain)
-                    : SciFiColors.textDim,
-                size: 24,
-              ),
-              const SizedBox(width: 24),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      widget.title,
-                      style: GoogleFonts.shareTechMono(
-                        color: enabled
-                            ? SciFiColors.textMain
-                            : SciFiColors.textDim,
-                        fontWeight: FontWeight.bold,
-                        letterSpacing: 1.5,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      widget.subtitle,
-                      style: GoogleFonts.shareTechMono(
-                        color: SciFiColors.textDim,
-                        fontSize: 11,
-                        letterSpacing: 1.0,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              if (enabled)
-                Icon(
-                  Icons.chevron_right,
-                  color: _hovered
-                      ? SciFiColors.primaryYel
-                      : SciFiColors.textDim,
-                ),
-            ],
-          ),
-        ),
+          if (enabled)
+            const Icon(Icons.chevron_right, color: SciFiColors.textDim),
+        ],
       ),
     );
   }
@@ -246,17 +220,14 @@ class _WebDavSettingsPage extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             // Header with back button
-            TechPanel(
+            NbPanel(
               height: 88,
-              delay: const Duration(milliseconds: 50),
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 12),
               backgroundColor: SciFiColors.surfaceLight,
+              shadowOffset: const Offset(8, 8),
               child: Row(
                 children: [
-                  _RectHeaderButton(
-                    onPressed: onBack,
-                    icon: Icons.arrow_back,
-                  ),
+                  _RectHeaderButton(onPressed: onBack, icon: Icons.arrow_back),
                   const SizedBox(width: 8),
                   Column(
                     mainAxisAlignment: MainAxisAlignment.center,
@@ -355,8 +326,6 @@ class _WebDavCard extends StatefulWidget {
 }
 
 class _WebDavCardState extends State<_WebDavCard> {
-  bool _hovered = false;
-
   Future<void> _confirmDelete() async {
     final confirmed = await showDialog<bool>(
       context: context,
@@ -374,100 +343,71 @@ class _WebDavCardState extends State<_WebDavCard> {
 
   @override
   Widget build(BuildContext context) {
-    return MouseRegion(
-      onEnter: (_) => setState(() => _hovered = true),
-      onExit: (_) => setState(() => _hovered = false),
-      child: InkWell(
-        onTap: () => showDialog(
-          context: context,
-          builder: (ctx) => _WebDavNodeDialog(config: widget.config),
-        ),
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 150),
-          curve: Curves.easeOutCubic,
-          decoration: BoxDecoration(
-            border: Border.all(
-              color: _hovered ? SciFiColors.primaryYel : SciFiColors.gridLines,
-            ),
-            color: _hovered
-                ? SciFiColors.surfaceLight.withValues(alpha: 0.95)
-                : SciFiColors.surfaceLight,
-            boxShadow: [
-              if (_hovered)
-                BoxShadow(
-                  color: SciFiColors.primaryYelGlow.withValues(alpha: 0.12),
-                  blurRadius: 14,
-                  spreadRadius: 1,
-                ),
-            ],
-          ),
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+    return NbButton(
+      onPressed: () => showDialog(
+        context: context,
+        builder: (ctx) => _WebDavNodeDialog(config: widget.config),
+      ),
+      padding: const EdgeInsets.all(16),
+      backgroundColor: SciFiColors.surfaceLight,
+      shadowOffset: const Offset(6, 6),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
             children: [
-              Row(
-                children: [
-                  Expanded(
-                    child: Text(
-                      widget.config.name,
-                      style: GoogleFonts.shareTechMono(
-                        color: SciFiColors.primaryYel,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 14,
-                        letterSpacing: 1.5,
-                      ),
-                      overflow: TextOverflow.ellipsis,
-                    ),
+              Expanded(
+                child: Text(
+                  widget.config.name,
+                  style: GoogleFonts.shareTechMono(
+                    color: SciFiColors.primaryYel,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 14,
+                    letterSpacing: 1.5,
                   ),
-                ],
-              ),
-              const SizedBox(height: 8),
-              Divider(
-                color: _hovered
-                    ? SciFiColors.primaryYelGlow.withValues(alpha: 0.6)
-                    : SciFiColors.gridLines,
-                height: 1,
-              ),
-              const SizedBox(height: 8),
-              Text(
-                widget.config.url,
-                style: GoogleFonts.shareTechMono(
-                  color: SciFiColors.textMain,
-                  fontSize: 12,
-                ),
-                overflow: TextOverflow.ellipsis,
-              ),
-              Text(
-                'PATH: ${widget.config.davPath}',
-                style: GoogleFonts.shareTechMono(
-                  color: SciFiColors.textDim,
-                  fontSize: 11,
-                ),
-                overflow: TextOverflow.ellipsis,
-              ),
-              const Spacer(),
-              Text(
-                'USER: ${widget.config.username.isEmpty ? 'GUEST' : widget.config.username}',
-                style: GoogleFonts.shareTechMono(
-                  color: _hovered
-                      ? SciFiColors.textMain
-                      : SciFiColors.textDim,
-                  fontSize: 11,
-                ),
-              ),
-              const SizedBox(height: 12),
-              Align(
-                alignment: Alignment.bottomRight,
-                child: _RectCardActionButton(
-                  icon: Icons.delete_outline,
-                  tooltip: 'REMOVE NODE',
-                  highlighted: _hovered,
-                  onPressed: _confirmDelete,
+                  overflow: TextOverflow.ellipsis,
                 ),
               ),
             ],
           ),
-        ),
+          const SizedBox(height: 8),
+          const Divider(color: SciFiColors.gridLines, height: 1),
+          const SizedBox(height: 8),
+          Text(
+            widget.config.url,
+            style: GoogleFonts.shareTechMono(
+              color: SciFiColors.textMain,
+              fontSize: 12,
+            ),
+            overflow: TextOverflow.ellipsis,
+          ),
+          Text(
+            'PATH: ${widget.config.davPath}',
+            style: GoogleFonts.shareTechMono(
+              color: SciFiColors.textDim,
+              fontSize: 11,
+            ),
+            overflow: TextOverflow.ellipsis,
+          ),
+          const Spacer(),
+          Text(
+            'USER: ${widget.config.username.isEmpty ? 'GUEST' : widget.config.username}',
+            style: GoogleFonts.shareTechMono(
+              color: SciFiColors.textDim,
+              fontSize: 11,
+            ),
+          ),
+          const SizedBox(height: 12),
+          Align(
+            alignment: Alignment.bottomRight,
+            child: _RectCardActionButton(
+              icon: Icons.delete_outline,
+              tooltip: 'REMOVE NODE',
+              highlighted: false,
+              onPressed: _confirmDelete,
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -481,35 +421,17 @@ class _AddNodeFab extends StatefulWidget {
 }
 
 class _AddNodeFabState extends State<_AddNodeFab> {
-  bool _hovered = false;
-
   @override
   Widget build(BuildContext context) {
-    return MouseRegion(
-      cursor: SystemMouseCursors.click,
-      onEnter: (_) => setState(() => _hovered = true),
-      onExit: (_) => setState(() => _hovered = false),
-      child: GestureDetector(
-        onTap: () => _showAddNodeDialog(context),
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 120),
-          width: 56,
-          height: 56,
-          alignment: Alignment.center,
-          decoration: BoxDecoration(
-            border: Border.all(
-              color: _hovered ? SciFiColors.primaryYel : SciFiColors.gridLines,
-              width: 1.5,
-            ),
-            color: _hovered
-                ? SciFiColors.primaryYelGlow
-                : SciFiColors.surfaceLight,
-          ),
-          child: Icon(
-            Icons.add,
-            color: _hovered ? SciFiColors.primaryYel : SciFiColors.textMain,
-            size: 24,
-          ),
+    return SizedBox(
+      width: 64,
+      height: 64,
+      child: NbButton(
+        onPressed: () => _showAddNodeDialog(context),
+        padding: EdgeInsets.zero,
+        shadowOffset: const Offset(4, 4),
+        child: const Center(
+          child: Icon(Icons.add, color: SciFiColors.textMain, size: 28),
         ),
       ),
     );
@@ -524,10 +446,7 @@ class _RectHeaderButton extends StatelessWidget {
   final VoidCallback? onPressed;
   final IconData icon;
 
-  const _RectHeaderButton({
-    required this.onPressed,
-    required this.icon,
-  });
+  const _RectHeaderButton({required this.onPressed, required this.icon});
 
   @override
   Widget build(BuildContext context) {
@@ -584,9 +503,7 @@ class _RectCardActionButton extends StatelessWidget {
           child: Icon(
             icon,
             size: 18,
-            color: highlighted
-                ? SciFiColors.primaryYel
-                : SciFiColors.textDim,
+            color: highlighted ? SciFiColors.primaryYel : SciFiColors.textDim,
           ),
         ),
       ),
@@ -638,73 +555,73 @@ class _WebDavNodeDialogState extends State<_WebDavNodeDialog> {
     return AppDialogShell(
       width: 480,
       child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              AppDialogTitle(
-                title: isEdit ? 'UPDATE WEBDAV NODE' : 'DEPLOY NEW WEBDAV NODE',
-              ),
-              const SizedBox(height: 24),
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          AppDialogTitle(
+            title: isEdit ? 'UPDATE WEBDAV NODE' : 'DEPLOY NEW WEBDAV NODE',
+          ),
+          const SizedBox(height: 24),
 
-              if (_errorMessage != null)
-                Padding(
-                  padding: const EdgeInsets.only(bottom: 16.0),
-                  child: Text(
-                    '> ERROR: $_errorMessage',
-                    style: GoogleFonts.shareTechMono(
-                      color: Colors.redAccent,
-                      fontSize: 12,
-                    ),
-                  ),
+          if (_errorMessage != null)
+            Padding(
+              padding: const EdgeInsets.only(bottom: 16.0),
+              child: Text(
+                '> ERROR: $_errorMessage',
+                style: GoogleFonts.shareTechMono(
+                  color: Colors.redAccent,
+                  fontSize: 12,
                 ),
+              ),
+            ),
 
-              _DialogInput(
-                label: 'NODE NAME',
-                controller: _nameCtl,
-                hint: 'My Music Library',
+          _DialogInput(
+            label: 'NODE NAME',
+            controller: _nameCtl,
+            hint: 'My Music Library',
+          ),
+          const SizedBox(height: 16),
+          _DialogInput(
+            label: 'SERVER URL',
+            controller: _urlCtl,
+            hint: 'https://dav.example.com',
+          ),
+          const SizedBox(height: 16),
+          Row(
+            children: [
+              Expanded(
+                child: _DialogInput(
+                  label: 'USERNAME',
+                  controller: _userCtl,
+                  hint: 'admin',
+                ),
               ),
-              const SizedBox(height: 16),
-              _DialogInput(
-                label: 'SERVER URL',
-                controller: _urlCtl,
-                hint: 'https://dav.example.com',
-              ),
-              const SizedBox(height: 16),
-              Row(
-                children: [
-                  Expanded(
-                    child: _DialogInput(
-                      label: 'USERNAME',
-                      controller: _userCtl,
-                      hint: 'admin',
-                    ),
-                  ),
-                  const SizedBox(width: 16),
-                  Expanded(
-                    child: _DialogInput(
-                      label: 'PASSWORD',
-                      controller: _passCtl,
-                      hint: '••••••••',
-                      isObscured: true,
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 16),
-              _DialogInput(
-                label: 'WEBDAV PATH',
-                controller: _pathCtl,
-                hint: '/music/',
-              ),
-              const SizedBox(height: 32),
-              AppDialogActions(
-                confirmLabel: isEdit ? 'UPDATE' : 'DEPLOY',
-                isLoading: _isLoading,
-                onCancel: () => Navigator.of(context).pop(),
-                onConfirm: _handleAction,
+              const SizedBox(width: 16),
+              Expanded(
+                child: _DialogInput(
+                  label: 'PASSWORD',
+                  controller: _passCtl,
+                  hint: '••••••••',
+                  isObscured: true,
+                ),
               ),
             ],
           ),
+          const SizedBox(height: 16),
+          _DialogInput(
+            label: 'WEBDAV PATH',
+            controller: _pathCtl,
+            hint: '/music/',
+          ),
+          const SizedBox(height: 32),
+          AppDialogActions(
+            confirmLabel: isEdit ? 'UPDATE' : 'DEPLOY',
+            isLoading: _isLoading,
+            onCancel: () => Navigator.of(context).pop(),
+            onConfirm: _handleAction,
+          ),
+        ],
+      ),
     );
   }
 

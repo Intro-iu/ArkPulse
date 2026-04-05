@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../theme/app_theme.dart';
-import '../widgets/tech_panel.dart';
+import '../widgets/neo_brutalism/nb_panel.dart';
 import 'dashboard.dart';
 import 'library.dart';
 import 'settings.dart';
@@ -8,6 +8,7 @@ import 'player.dart';
 import '../widgets/tech_grid_bg.dart';
 import '../../src/rust/api/player_api.dart';
 import '../../state/app_state.dart';
+import '../../services/app_notifications.dart';
 import 'dart:async';
 
 class MainLayout extends StatefulWidget {
@@ -21,26 +22,54 @@ class _MainLayoutState extends State<MainLayout> {
   int _currentIndex = 0;
   Timer? _statusPoller;
   bool _isMiniProgressHovered = false;
+  bool _audioBackendErrorShown = false;
+  bool _pollInFlight = false;
 
   @override
   void initState() {
     super.initState();
     // Initialize the native audio backend once on startup
-    AudioPlayer.initEngine();
+    unawaited(_initializeAudioBackend());
     // Poll the Rust engine global state every 500ms
     _statusPoller = Timer.periodic(const Duration(milliseconds: 250), (
       _,
     ) async {
+      if (_pollInFlight) {
+        return;
+      }
+      _pollInFlight = true;
       try {
-        final state = await AudioPlayer.getState();
+        var state = await AudioPlayer.getState();
         final progress = await AudioPlayer.getProgress();
+        final diagnostics = await AudioPlayer.getDiagnostics();
+        if (diagnostics.fileError.trim().isNotEmpty) {
+          state = PlaybackState.error(diagnostics.fileError.trim());
+        }
         if (mounted) {
-          AppState().syncPlaybackSnapshot(state: state, progress: progress);
+          final appState = AppState();
+          appState.syncPlaybackSnapshot(state: state, progress: progress);
+          appState.updatePlaybackDiagnostics(diagnostics);
         }
       } catch (_) {
         // Engine may not be ready yet on first call; ignore
+      } finally {
+        _pollInFlight = false;
       }
     });
+  }
+
+  Future<void> _initializeAudioBackend() async {
+    try {
+      await AudioPlayer.initEngine();
+    } catch (error) {
+      if (_audioBackendErrorShown || !mounted) {
+        return;
+      }
+      _audioBackendErrorShown = true;
+      AppNotifications.instance.showError(
+        'Audio backend unavailable. Bundle the mpv runtime library with this build.',
+      );
+    }
   }
 
   @override
@@ -155,9 +184,11 @@ class _MainLayoutState extends State<MainLayout> {
         final hasTrack = currentTrack != null;
         final hasProgress = hasTrack && appState.playbackDurationMs > 0;
 
-        return TechPanel(
+        return NbPanel(
           padding: EdgeInsets.zero,
           backgroundColor: SciFiColors.surfaceLight,
+          hasShadow:
+              false, // Explicitly no shadow underneath as it sticks to the bottom.
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
@@ -209,7 +240,10 @@ class _MainLayoutState extends State<MainLayout> {
                             ? null
                             : () => Navigator.of(context).push(_playerRoute()),
                         child: Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 18,
+                            vertical: 12,
+                          ),
                           child: Row(
                             children: [
                               Container(
@@ -242,11 +276,14 @@ class _MainLayoutState extends State<MainLayout> {
                                   mainAxisAlignment: MainAxisAlignment.center,
                                   children: [
                                     _MarqueeText(
-                                      text: currentTrack?.title ??
+                                      text:
+                                          currentTrack?.title ??
                                           playbackState.when(
                                             stopped: () => 'NO TRACK PLAYING',
-                                            playing: () => 'NATIVE DECODER ACTIVE',
-                                            paused: () => 'PLAYBACK INTERRUPTED',
+                                            playing: () =>
+                                                'NATIVE DECODER ACTIVE',
+                                            paused: () =>
+                                                'PLAYBACK INTERRUPTED',
                                             error: (msg) => 'ENGINE FAULT',
                                           ),
                                       style: const TextStyle(
@@ -400,10 +437,7 @@ class _MainLayoutState extends State<MainLayout> {
           child: SizeTransition(
             sizeFactor: curved,
             axisAlignment: 1,
-            child: FadeTransition(
-              opacity: curved,
-              child: child,
-            ),
+            child: FadeTransition(opacity: curved, child: child),
           ),
         );
       },
@@ -508,8 +542,9 @@ class _MiniProgressBar extends StatelessWidget {
                     },
               onHorizontalDragStart: onChanged == null
                   ? null
-                  : (details) =>
-                        onChangeStart?.call(toFraction(details.localPosition.dx)),
+                  : (details) => onChangeStart?.call(
+                      toFraction(details.localPosition.dx),
+                    ),
               onHorizontalDragUpdate: onChanged == null
                   ? null
                   : (details) =>
@@ -598,11 +633,9 @@ class _MarqueeTextState extends State<_MarqueeText>
           child: AnimatedBuilder(
             animation: _controller,
             builder: (context, child) {
-              final dx = -overflow * Curves.easeInOut.transform(_controller.value);
-              return Transform.translate(
-                offset: Offset(dx, 0),
-                child: child,
-              );
+              final dx =
+                  -overflow * Curves.easeInOut.transform(_controller.value);
+              return Transform.translate(offset: Offset(dx, 0), child: child);
             },
             child: Text(
               widget.text,

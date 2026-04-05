@@ -1,12 +1,15 @@
 import 'package:flutter/material.dart';
+import 'dart:ui' as dart_ui;
+import 'package:characters/characters.dart';
 import 'package:google_fonts/google_fonts.dart';
+import '../../models/track_metadata.dart';
 import '../../models/webdav_config.dart';
 import '../../services/app_notifications.dart';
 import '../../src/rust/api/player_api.dart';
 import '../../state/app_state.dart';
 import '../../theme/app_theme.dart';
 import '../widgets/app_dialogs.dart';
-import '../widgets/tech_panel.dart';
+import '../widgets/neo_brutalism/nb_panel.dart';
 
 class PlayerView extends StatelessWidget {
   const PlayerView({super.key});
@@ -21,13 +24,19 @@ class PlayerView extends StatelessWidget {
           builder: (context, _) {
             final appState = AppState();
             final currentTrack = appState.currentTrack;
+            final currentTrackInfo = appState.currentTrackInfo;
+            final playbackDiagnostics = appState.playbackDiagnostics;
             final playbackError = appState.playbackErrorMessage;
             final playbackState = appState.playbackState;
+            final metadata = StandardTrackMetadata.fromSources(
+              currentTrack,
+              currentTrackInfo,
+            );
             final isPlaying = playbackState is PlaybackState_Playing;
             final isLoading = appState.isTrackLoading;
             final progress = appState.playbackProgress;
 
-            return Column(
+            Widget bodyContent = Column(
               children: [
                 Padding(
                   padding: const EdgeInsets.all(24.0),
@@ -65,6 +74,7 @@ class PlayerView extends StatelessWidget {
                             ),
                             child: _NowPlayingPanel(
                               currentTrack: currentTrack,
+                              metadata: metadata,
                               playbackState: playbackState,
                               isPlaying: isPlaying,
                               isLoading: isLoading,
@@ -82,6 +92,8 @@ class PlayerView extends StatelessWidget {
                             ),
                             child: _LyricsPanel(
                               currentTrack: currentTrack,
+                              metadata: metadata,
+                              playbackDiagnostics: playbackDiagnostics,
                               playbackError: playbackError,
                               isLoading: isLoading,
                             ),
@@ -97,6 +109,27 @@ class PlayerView extends StatelessWidget {
                 ),
               ],
             );
+
+            if (metadata.coverArt != null) {
+              return Stack(
+                fit: StackFit.expand,
+                children: [
+                  Image.memory(metadata.coverArt!, fit: BoxFit.cover),
+                  BackdropFilter(
+                    filter: dart_ui.ImageFilter.blur(
+                      sigmaX: 90.0,
+                      sigmaY: 90.0,
+                    ),
+                    child: Container(
+                      color: SciFiColors.background.withValues(alpha: 0.82),
+                    ),
+                  ),
+                  bodyContent,
+                ],
+              );
+            }
+
+            return bodyContent;
           },
         ),
       ),
@@ -106,6 +139,7 @@ class PlayerView extends StatelessWidget {
 
 class _NowPlayingPanel extends StatelessWidget {
   final ScrapedSong? currentTrack;
+  final StandardTrackMetadata metadata;
   final PlaybackState playbackState;
   final bool isPlaying;
   final bool isLoading;
@@ -113,6 +147,7 @@ class _NowPlayingPanel extends StatelessWidget {
 
   const _NowPlayingPanel({
     required this.currentTrack,
+    required this.metadata,
     required this.playbackState,
     required this.isPlaying,
     required this.isLoading,
@@ -122,10 +157,10 @@ class _NowPlayingPanel extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final appState = AppState();
-    final title = currentTrack?.title ?? 'NO TRACK DEPLOYED';
+    final title = currentTrack == null ? 'NO TRACK DEPLOYED' : metadata.title;
     final subtitle = currentTrack == null
         ? 'SELECT A TRACK FROM WEBDAV_HUB TO START STREAMING'
-        : '${currentTrack!.artist} // ${currentTrack!.album}';
+        : metadata.heroLine.ifEmpty('NO TAG METADATA');
     final status = isLoading
         ? 'BUFFERING'
         : playbackState.when(
@@ -146,8 +181,9 @@ class _NowPlayingPanel extends StatelessWidget {
       );
     }
 
-    return TechPanel(
-      delay: const Duration(milliseconds: 100),
+    return NbPanel(
+      backgroundColor: Colors.transparent,
+      hasShadow: false,
       child: LayoutBuilder(
         builder: (context, constraints) {
           return Padding(
@@ -162,45 +198,99 @@ class _NowPlayingPanel extends StatelessWidget {
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       Container(
-                        width: 300,
-                        height: 300,
+                        width: 320,
+                        height: 320,
                         decoration: BoxDecoration(
-                          border: Border.all(color: SciFiColors.gridLines),
-                          color: SciFiColors.background,
-                        ),
-                        child: Stack(
-                          alignment: Alignment.center,
-                          children: [
-                            for (int i = 1; i <= 5; i++)
-                              Container(
-                                width: 50.0 * i,
-                                height: 50.0 * i,
-                                decoration: BoxDecoration(
-                                  shape: BoxShape.circle,
-                                  border: Border.all(
-                                    color: SciFiColors.primaryYelGlow.withValues(
-                                      alpha: 0.1 * i,
-                                    ),
-                                    width: 1,
-                                  ),
-                                ),
+                          borderRadius: BorderRadius.circular(
+                            metadata.coverArt != null ? 8 : 0,
+                          ),
+                          border: metadata.coverArt != null
+                              ? null
+                              : Border.all(color: SciFiColors.gridLines),
+                          color: SciFiColors.background.withValues(alpha: 0.6),
+                          boxShadow: [
+                            if (metadata.coverArt != null)
+                              BoxShadow(
+                                color: Colors.black.withValues(alpha: 0.5),
+                                blurRadius: 40,
+                                offset: const Offset(0, 20),
                               ),
-                            isLoading
-                                ? const SizedBox(
-                                    width: 80,
-                                    height: 80,
-                                    child: CircularProgressIndicator(
-                                      strokeWidth: 3,
-                                      color: SciFiColors.primaryYel,
-                                    ),
-                                  )
-                                : const Icon(
-                                    Icons.album,
-                                    size: 80,
-                                    color: SciFiColors.primaryYelGlow,
-                                  ),
                           ],
+                          image: metadata.coverArt != null
+                              ? DecorationImage(
+                                  image: MemoryImage(metadata.coverArt!),
+                                  fit: BoxFit.cover,
+                                )
+                              : null,
                         ),
+                        child: metadata.coverArt != null
+                            ? null
+                            : Stack(
+                                alignment: Alignment.center,
+                                children: [
+                                  for (int i = 1; i <= 5; i++)
+                                    Container(
+                                      width: 50.0 * i,
+                                      height: 50.0 * i,
+                                      decoration: BoxDecoration(
+                                        shape: BoxShape.circle,
+                                        border: Border.all(
+                                          color: SciFiColors.primaryYelGlow
+                                              .withValues(alpha: 0.1 * i),
+                                          width: 1,
+                                        ),
+                                      ),
+                                    ),
+                                  isLoading
+                                      ? const SizedBox(
+                                          width: 80,
+                                          height: 80,
+                                          child: CircularProgressIndicator(
+                                            strokeWidth: 3,
+                                            color: SciFiColors.primaryYel,
+                                          ),
+                                        )
+                                      : Column(
+                                          mainAxisAlignment:
+                                              MainAxisAlignment.center,
+                                          children: [
+                                            Text(
+                                              metadata.album
+                                                  .split(RegExp(r'\s+'))
+                                                  .where(
+                                                    (part) => part.isNotEmpty,
+                                                  )
+                                                  .take(2)
+                                                  .map(
+                                                    (part) =>
+                                                        part.characters.first,
+                                                  )
+                                                  .join()
+                                                  .ifEmpty('AP'),
+                                              style: GoogleFonts.shareTechMono(
+                                                color:
+                                                    SciFiColors.primaryYelGlow,
+                                                fontSize: 48,
+                                                fontWeight: FontWeight.bold,
+                                                letterSpacing: 4,
+                                              ),
+                                            ),
+                                            const SizedBox(height: 12),
+                                            Text(
+                                              metadata.archiveCode.ifEmpty(
+                                                metadata.album,
+                                              ),
+                                              textAlign: TextAlign.center,
+                                              style: GoogleFonts.shareTechMono(
+                                                color: SciFiColors.textDim,
+                                                fontSize: 10,
+                                                letterSpacing: 1.4,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                ],
+                              ),
                       ),
                       const SizedBox(height: 40),
                       Text(
@@ -222,6 +312,19 @@ class _NowPlayingPanel extends StatelessWidget {
                           letterSpacing: 1.5,
                         ),
                       ),
+                      if (currentTrack != null &&
+                          metadata.subtitle.isNotEmpty) ...[
+                        const SizedBox(height: 8),
+                        Text(
+                          metadata.subtitle,
+                          textAlign: TextAlign.center,
+                          style: GoogleFonts.shareTechMono(
+                            color: SciFiColors.primaryYelGlow,
+                            fontSize: 12,
+                            letterSpacing: 1.2,
+                          ),
+                        ),
+                      ],
                       const SizedBox(height: 20),
                       Text(
                         'ENGINE STATUS // $status',
@@ -306,7 +409,8 @@ class _NowPlayingPanel extends StatelessWidget {
                         hasTrack: currentTrack != null,
                         isLoading: isLoading,
                         progress: progress,
-                        displayedPositionMs: appState.displayedPlaybackPositionMs,
+                        displayedPositionMs:
+                            appState.displayedPlaybackPositionMs,
                         durationMs: appState.playbackDurationMs,
                         onChangeStart: currentTrack == null
                             ? null
@@ -390,8 +494,9 @@ class _PlayerProgressSectionState extends State<_PlayerProgressSection> {
                             onTapDown: widget.onChanged == null
                                 ? null
                                 : (details) {
-                                    final fraction =
-                                        toFraction(details.localPosition.dx);
+                                    final fraction = toFraction(
+                                      details.localPosition.dx,
+                                    );
                                     widget.onChangeStart?.call(fraction);
                                     widget.onChanged?.call(fraction);
                                     widget.onChangeEnd?.call(fraction);
@@ -399,13 +504,13 @@ class _PlayerProgressSectionState extends State<_PlayerProgressSection> {
                             onHorizontalDragStart: widget.onChanged == null
                                 ? null
                                 : (details) => widget.onChangeStart?.call(
-                                      toFraction(details.localPosition.dx),
-                                    ),
+                                    toFraction(details.localPosition.dx),
+                                  ),
                             onHorizontalDragUpdate: widget.onChanged == null
                                 ? null
                                 : (details) => widget.onChanged?.call(
-                                      toFraction(details.localPosition.dx),
-                                    ),
+                                    toFraction(details.localPosition.dx),
+                                  ),
                             onHorizontalDragEnd: widget.onChanged == null
                                 ? null
                                 : (_) =>
@@ -436,10 +541,7 @@ class _PlayerProgressSectionState extends State<_PlayerProgressSection> {
                       ),
                     ),
                   )
-                : Container(
-                    height: 2,
-                    color: SciFiColors.gridLines,
-                  ),
+                : Container(height: 2, color: SciFiColors.gridLines),
           ),
         ),
         const SizedBox(height: 10),
@@ -470,11 +572,15 @@ String _formatMs(int ms) {
 
 class _LyricsPanel extends StatelessWidget {
   final ScrapedSong? currentTrack;
+  final StandardTrackMetadata metadata;
+  final PlaybackDiagnostics? playbackDiagnostics;
   final String? playbackError;
   final bool isLoading;
 
   const _LyricsPanel({
     required this.currentTrack,
+    required this.metadata,
+    required this.playbackDiagnostics,
     required this.playbackError,
     required this.isLoading,
   });
@@ -482,39 +588,73 @@ class _LyricsPanel extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final appState = AppState();
+    final diagnostics = playbackDiagnostics;
+    final parsedLyrics = metadata.parsedLyrics;
+    final activeLyricIndex = parsedLyrics.activeIndexForPosition(
+      appState.displayedPlaybackPositionMs,
+    );
+    List<String> diagnosticLines() {
+      if (diagnostics == null) {
+        return const ['> MPV SNAPSHOT UNAVAILABLE'];
+      }
+      return [
+        '> MPV DIAGNOSTICS',
+        'PATH // ${diagnostics.path.ifEmpty('N/A')}',
+        'STREAM // ${diagnostics.streamOpenFilename.ifEmpty('N/A')}',
+        'FILE_ERROR // ${diagnostics.fileError.ifEmpty('N/A')}',
+        'IDLE_ACTIVE // ${diagnostics.idleActive}',
+        'EOF_REACHED // ${diagnostics.eofReached}',
+        'PAUSED_FOR_CACHE // ${diagnostics.pausedForCache}',
+        'POSITION_MS // ${diagnostics.positionMs}',
+        'DURATION_MS // ${diagnostics.durationMs}',
+      ];
+    }
+
     final lines = playbackError != null
         ? <String>[
             '> AUDIO ENGINE ERROR',
             playbackError!,
             'VERIFY WEBDAV ACCESS, FILE AVAILABILITY, AND DECODER SUPPORT.',
+            ...diagnosticLines(),
           ]
         : isLoading
         ? <String>[
             '> TRACK REQUEST ACCEPTED',
             'REMOTE AUDIO BUFFERING IN PROGRESS.',
-            'CURRENT STREAM HAS BEEN STOPPED.',
             'WAITING FOR NETWORK AND DECODER READINESS.',
+            ...diagnosticLines(),
           ]
         : currentTrack == null
         ? <String>[
             '> NO ACTIVE LYRIC FEED',
             'SELECT A TRACK TO ACTIVATE THE PLAYER VIEW.',
-            'LYRIC SCRAPER INTEGRATION REMAINS PENDING.',
+            'PLAYER METADATA PIPELINE STANDBY.',
           ]
+        : parsedLyrics.hasTimedLyrics
+        ? const <String>[]
+        : metadata.lyrics.trim().isNotEmpty
+        ? metadata.lyrics
+              .split(RegExp(r'\r?\n'))
+              .where((line) => line.trim().isNotEmpty)
+              .toList()
         : <String>[
             '> TRACK LINKED TO PLAYER STATE',
-            'TITLE // ${currentTrack!.title}',
-            'ARTIST // ${currentTrack!.artist}',
-            'ALBUM // ${currentTrack!.album}',
+            'TITLE // ${metadata.title.ifEmpty('N/A')}',
+            'ARTIST // ${metadata.artist.ifEmpty('N/A')}',
+            'ALBUM // ${metadata.album.ifEmpty('N/A')}',
+            'ALBUM_ARTIST // ${metadata.albumArtist.ifEmpty('N/A')}',
+            'GENRE // ${metadata.genre.ifEmpty('N/A')}',
+            'DATE // ${metadata.date.ifEmpty('N/A')}',
             'REMOTE PATH // ${currentTrack!.path}',
             'QUEUE // ${appState.queueIndex + 1}/${appState.playbackQueue.length}',
-            'PLAY MODE // ${switch (appState.playbackMode) { PlaybackMode.listLoop => 'LIST LOOP', PlaybackMode.singleLoop => 'SINGLE LOOP', PlaybackMode.shuffle => 'SHUFFLE', }}',
-            'LYRIC SCRAPER INTEGRATION REMAINS PENDING.',
+            'NO EMBEDDED LYRICS FOUND.',
+            ...diagnosticLines(),
           ];
 
-    return TechPanel(
-      delay: const Duration(milliseconds: 200),
+    return NbPanel(
       backgroundColor: SciFiColors.surfaceLight.withValues(alpha: 0.5),
+      shadowOffset: const Offset(4, 4),
+      isFrosted: true,
       child: TweenAnimationBuilder<double>(
         tween: Tween(begin: 0, end: 1),
         duration: const Duration(milliseconds: 320),
@@ -549,25 +689,50 @@ class _LyricsPanel extends StatelessWidget {
               ),
               const SizedBox(height: 24),
               Expanded(
-                child: ListView.separated(
-                  itemCount: lines.length,
-                  separatorBuilder: (_, _) => const SizedBox(height: 18),
-                  itemBuilder: (context, index) {
-                    final isActive = index == 0;
-                    return Text(
-                      lines[index],
-                      style: GoogleFonts.shareTechMono(
-                        color: isActive
-                            ? SciFiColors.primaryYel
-                            : SciFiColors.textDim,
-                        fontSize: isActive ? 22 : 16,
-                        fontWeight: isActive
-                            ? FontWeight.bold
-                            : FontWeight.normal,
+                child: parsedLyrics.hasTimedLyrics
+                    ? ListView.separated(
+                        itemCount: parsedLyrics.timedLines.length,
+                        separatorBuilder: (_, _) => const SizedBox(height: 14),
+                        itemBuilder: (context, index) {
+                          final line = parsedLyrics.timedLines[index];
+                          final isActive = index == activeLyricIndex;
+                          return InkWell(
+                            onTap: () =>
+                                appState.seekToPositionMs(line.timestampMs),
+                            child: Text(
+                              line.text,
+                              style: GoogleFonts.shareTechMono(
+                                color: isActive
+                                    ? SciFiColors.primaryYel
+                                    : SciFiColors.textDim,
+                                fontSize: isActive ? 22 : 16,
+                                fontWeight: isActive
+                                    ? FontWeight.bold
+                                    : FontWeight.normal,
+                              ),
+                            ),
+                          );
+                        },
+                      )
+                    : ListView.separated(
+                        itemCount: lines.length,
+                        separatorBuilder: (_, _) => const SizedBox(height: 18),
+                        itemBuilder: (context, index) {
+                          final isActive = index == 0;
+                          return Text(
+                            lines[index],
+                            style: GoogleFonts.shareTechMono(
+                              color: isActive
+                                  ? SciFiColors.primaryYel
+                                  : SciFiColors.textDim,
+                              fontSize: isActive ? 22 : 16,
+                              fontWeight: isActive
+                                  ? FontWeight.bold
+                                  : FontWeight.normal,
+                            ),
+                          );
+                        },
                       ),
-                    );
-                  },
-                ),
               ),
             ],
           ),
@@ -616,6 +781,10 @@ class _RectControlButton extends StatelessWidget {
   }
 }
 
+extension on String {
+  String ifEmpty(String fallback) => trim().isEmpty ? fallback : this;
+}
+
 class _PlayerAddToPlaylistDialog extends StatefulWidget {
   final ScrapedSong song;
 
@@ -626,7 +795,8 @@ class _PlayerAddToPlaylistDialog extends StatefulWidget {
       _PlayerAddToPlaylistDialogState();
 }
 
-class _PlayerAddToPlaylistDialogState extends State<_PlayerAddToPlaylistDialog> {
+class _PlayerAddToPlaylistDialogState
+    extends State<_PlayerAddToPlaylistDialog> {
   String? _selectedPlaylistId;
   String? _errorMessage;
   bool _isSubmitting = false;
