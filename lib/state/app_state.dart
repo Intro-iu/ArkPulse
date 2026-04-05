@@ -2,12 +2,14 @@ import 'dart:async';
 import 'dart:math';
 
 import 'package:arkpulse/models/playlist.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import '../models/webdav_config.dart';
 import '../services/database_service.dart';
 import '../src/rust/api/player_api.dart';
 import '../src/rust/api/webdav_api.dart';
 import 'package:uuid/uuid.dart';
+import '../services/smtc_service.dart';
 
 enum PlaybackMode { listLoop, singleLoop, shuffle }
 
@@ -39,6 +41,10 @@ class AppState extends ChangeNotifier {
   int? _pendingSeekPositionMs;
   bool _suppressAutoAdvance = false;
 
+  String _searchQuery = '';
+  bool _isSearching = false;
+  List<ScrapedSong> _searchResults = const [];
+
   List<WebDavConfig> get webDavConfigs => List.unmodifiable(_webDavConfigs);
   List<Playlist> get playlists => List.unmodifiable(_playlists);
   bool get isInitialized => _initialized;
@@ -56,6 +62,9 @@ class AppState extends ChangeNotifier {
   bool get isSeeking => _isSeeking;
   bool get hasPendingSeek => _pendingSeekPositionMs != null;
   bool get hasResolvedCurrentTrackMetadata => _currentTrackInfo != null;
+  String get searchQuery => _searchQuery;
+  bool get isSearching => _isSearching;
+  List<ScrapedSong> get searchResults => List.unmodifiable(_searchResults);
   int get displayedPlaybackPositionMs =>
       _seekPreviewPositionMs ?? _pendingSeekPositionMs ?? _playbackPositionMs;
   double? get playbackProgress {
@@ -66,6 +75,21 @@ class AppState extends ChangeNotifier {
   /// Must be called once at app startup (in main.dart or MainLayout.initState).
   Future<void> initialize() async {
     if (_initialized) return;
+
+    await SMTCService.instance.init(
+      onPlay: () {
+        if (!_isTrackLoading) resumePlayback();
+      },
+      onPause: () {
+        if (!_isTrackLoading) pausePlayback();
+      },
+      onNext: () {
+        if (!_isTrackLoading) playNext();
+      },
+      onPrevious: () {
+        if (!_isTrackLoading) playPrevious();
+      },
+    );
     final database = DatabaseService();
     final rows = await database.loadWebDavConfigs();
     for (final row in rows) {
@@ -239,6 +263,38 @@ class AppState extends ChangeNotifier {
         .where((c) => c.state == ScrapeState.success)
         .expand((c) => c.songs)
         .toList();
+  }
+
+  void clearSearch() {
+    _searchQuery = '';
+    _isSearching = false;
+    _searchResults = const [];
+    notifyListeners();
+  }
+
+  Future<void> searchSongs(String query) async {
+    _searchQuery = query;
+    if (query.trim().isEmpty) {
+      clearSearch();
+      return;
+    }
+
+    _isSearching = true;
+    notifyListeners();
+
+    final allSongs = getAllScrapedSongs();
+
+    // Spawn a background worker to avoid freezing UI
+    final results = await compute(_performFuzzySearch, {
+      'query': query,
+      'songs': allSongs,
+    });
+
+    if (_searchQuery != query) return;
+
+    _searchResults = results;
+    _isSearching = false;
+    notifyListeners();
   }
 
   Future<String?> playSong(ScrapedSong song, {List<ScrapedSong>? queue}) async {
@@ -486,6 +542,16 @@ class AppState extends ChangeNotifier {
             hasReachedPendingSeek)) {
       _isTrackLoading = false;
       _pendingSeekPositionMs = null;
+    }
+
+    if (stateChanged) {
+      if (state is PlaybackState_Playing) {
+        SMTCService.instance.updatePlaybackState(true);
+      } else if (state is PlaybackState_Paused) {
+        SMTCService.instance.updatePlaybackState(false);
+      } else if (state is PlaybackState_Stopped) {
+        SMTCService.instance.stop();
+      }
     }
 
     _playbackState = state;
@@ -746,6 +812,11 @@ class AppState extends ChangeNotifier {
         return;
       }
       _currentTrackInfo = metadata;
+      SMTCService.instance.updateMetadata(
+        title: metadata.title.isNotEmpty ? metadata.title : track.title,
+        artist: metadata.artist.isNotEmpty ? metadata.artist : track.artist,
+        album: metadata.album.isNotEmpty ? metadata.album : track.album,
+      );
       _playbackErrorMessage = null;
       if (_isTrackLoading &&
           _pendingSeekPositionMs == null &&
@@ -800,4 +871,15 @@ class AppState extends ChangeNotifier {
     _seekPreviewPositionMs = null;
     _pendingSeekPositionMs = null;
   }
+}
+
+List<ScrapedSong> _performFuzzySearch(Map<String, dynamic> params) {
+  final query = (params['query'] as String).toLowerCase().trim();
+  final songs = params['songs'] as List<ScrapedSong>;
+
+  return songs.where((song) {
+    return song.title.toLowerCase().contains(query) ||
+        song.artist.toLowerCase().contains(query) ||
+        song.album.toLowerCase().contains(query);
+  }).toList();
 }
