@@ -8,18 +8,34 @@ import 'package:flutter_rust_bridge/flutter_rust_bridge_for_generated.dart';
 import 'package:freezed_annotation/freezed_annotation.dart' hide protected;
 part 'player_api.freezed.dart';
 
-// These types are ignored because they are neither used by any `pub` functions nor (for structs and enums) marked `#[frb(unignore)]`: `GLOBAL_SINK`, `HTTP_CLIENT`, `PLAYER_STATE`, `TrackInfo`
-// These function are ignored because they are on traits that is not defined in current crate (put an empty `#[frb]` on it to unignore): `clone`, `clone`, `deref`, `deref`, `deref`, `fmt`, `fmt`, `initialize`, `initialize`, `initialize`
+// These functions are ignored because they are not marked as `pub`: `build_basic_auth_header`, `build_mp4_metadata_payload`, `check_error`, `command_args`, `command`, `decode_mp4_text`, `display_symbol`, `download_remote_track_to_temp`, `extract_track_info_from_path`, `fetch_remote_range_bytes`, `find_atom_in_payload`, `find_child_atom`, `first_property_value`, `get_property_bool`, `get_property_f64`, `get_property_string`, `is_mp4_url`, `item_string`, `library_candidates`, `load_file`, `load_mpv_library`, `load_symbol`, `merge_mp4_atom_metadata`, `mp4_lyrics_fallback`, `new`, `parse_atom_size`, `parse_http_byte_range`, `property_seconds_to_ms`, `read_mp4_pair_atom`, `read_mp4_text_atom`, `resolve_remote_playback_target`, `same_origin`, `set_option_string`, `set_property_bool`, `uuid_suffix`
+// These types are ignored because they are neither used by any `pub` functions nor (for structs and enums) marked `#[frb(unignore)]`: `GLOBAL_MPV`, `HAS_ACTIVE_PLAYBACK`, `Mp4AtomSpan`, `MpvHandle`, `PLAYBACK_HTTP_CLIENT`, `PLAYER_STATE`, `RemoteFetchContext`, `RemoteSourceDescriptor`, `ResolvedPlaybackTarget`, `RuntimeMpv`
+// These function are ignored because they are on traits that is not defined in current crate (put an empty `#[frb]` on it to unignore): `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `deref`, `deref`, `deref`, `deref`, `drop`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `initialize`, `initialize`, `initialize`, `initialize`
 
 // Rust type: RustOpaqueMoi<flutter_rust_bridge::for_generated::RustAutoOpaqueInner<AudioPlayer>>
 abstract class AudioPlayer implements RustOpaqueInterface {
-  static Future<PlaybackState> getState() =>
-      RustLib.instance.api.crateApiPlayerApiAudioPlayerGetState();
+  static Future<TrackInfo> extractRemoteTrackInfo({
+    required String url,
+    required String username,
+    required String token,
+  }) => RustLib.instance.api.crateApiPlayerApiAudioPlayerExtractRemoteTrackInfo(
+    url: url,
+    username: username,
+    token: token,
+  );
+
+  static Future<PlaybackDiagnostics> getDiagnostics() =>
+      RustLib.instance.api.crateApiPlayerApiAudioPlayerGetDiagnostics();
 
   static Future<PlaybackProgress> getProgress() =>
       RustLib.instance.api.crateApiPlayerApiAudioPlayerGetProgress();
 
-  /// Initializes the audio engine permanently in a background thread
+  static Future<PlaybackState> getState() =>
+      RustLib.instance.api.crateApiPlayerApiAudioPlayerGetState();
+
+  static Future<TrackInfo> getTrackInfo() =>
+      RustLib.instance.api.crateApiPlayerApiAudioPlayerGetTrackInfo();
+
   static Future<void> initEngine() =>
       RustLib.instance.api.crateApiPlayerApiAudioPlayerInitEngine();
 
@@ -30,14 +46,11 @@ abstract class AudioPlayer implements RustOpaqueInterface {
   static Future<void> pause() =>
       RustLib.instance.api.crateApiPlayerApiAudioPlayerPause();
 
-  /// Plays a local file
   static Future<void> playLocalFile({required String path}) => RustLib
       .instance
       .api
       .crateApiPlayerApiAudioPlayerPlayLocalFile(path: path);
 
-  /// Downloads a remote WebDAV audio file to a temp file and plays it.
-  /// username / token are used for HTTP Basic Auth.
   static Future<void> playRemoteFile({
     required String url,
     required String username,
@@ -51,20 +64,78 @@ abstract class AudioPlayer implements RustOpaqueInterface {
   static Future<void> resume() =>
       RustLib.instance.api.crateApiPlayerApiAudioPlayerResume();
 
-  static Future<void> seek({required int positionMs}) =>
-      RustLib.instance.api.crateApiPlayerApiAudioPlayerSeek(
-        positionMs: BigInt.from(positionMs),
-      );
+  static Future<void> seek({required PlatformInt64 positionMs}) => RustLib
+      .instance
+      .api
+      .crateApiPlayerApiAudioPlayerSeek(positionMs: positionMs);
 
   static Future<void> stop() =>
       RustLib.instance.api.crateApiPlayerApiAudioPlayerStop();
 }
 
+class PlaybackDiagnostics {
+  final String path;
+  final String streamOpenFilename;
+  final String fileError;
+  final bool pausedForCache;
+  final bool idleActive;
+  final bool eofReached;
+  final PlatformInt64 durationMs;
+  final PlatformInt64 positionMs;
+
+  const PlaybackDiagnostics({
+    required this.path,
+    required this.streamOpenFilename,
+    required this.fileError,
+    required this.pausedForCache,
+    required this.idleActive,
+    required this.eofReached,
+    required this.durationMs,
+    required this.positionMs,
+  });
+
+  @override
+  int get hashCode =>
+      path.hashCode ^
+      streamOpenFilename.hashCode ^
+      fileError.hashCode ^
+      pausedForCache.hashCode ^
+      idleActive.hashCode ^
+      eofReached.hashCode ^
+      durationMs.hashCode ^
+      positionMs.hashCode;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is PlaybackDiagnostics &&
+          runtimeType == other.runtimeType &&
+          path == other.path &&
+          streamOpenFilename == other.streamOpenFilename &&
+          fileError == other.fileError &&
+          pausedForCache == other.pausedForCache &&
+          idleActive == other.idleActive &&
+          eofReached == other.eofReached &&
+          durationMs == other.durationMs &&
+          positionMs == other.positionMs;
+}
+
 class PlaybackProgress {
-  final int positionMs;
-  final int durationMs;
+  final PlatformInt64 positionMs;
+  final PlatformInt64 durationMs;
 
   const PlaybackProgress({required this.positionMs, required this.durationMs});
+
+  @override
+  int get hashCode => positionMs.hashCode ^ durationMs.hashCode;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is PlaybackProgress &&
+          runtimeType == other.runtimeType &&
+          positionMs == other.positionMs &&
+          durationMs == other.durationMs;
 }
 
 @freezed
@@ -75,4 +146,67 @@ sealed class PlaybackState with _$PlaybackState {
   const factory PlaybackState.playing() = PlaybackState_Playing;
   const factory PlaybackState.paused() = PlaybackState_Paused;
   const factory PlaybackState.error(String field0) = PlaybackState_Error;
+}
+
+class TrackInfo {
+  final String title;
+  final String subtitle;
+  final String artist;
+  final String albumArtist;
+  final String album;
+  final String genre;
+  final String date;
+  final String trackNumber;
+  final String discNumber;
+  final String lyrics;
+  final Uint8List? coverArt;
+  final PlatformInt64 durationMs;
+
+  const TrackInfo({
+    required this.title,
+    required this.subtitle,
+    required this.artist,
+    required this.albumArtist,
+    required this.album,
+    required this.genre,
+    required this.date,
+    required this.trackNumber,
+    required this.discNumber,
+    required this.lyrics,
+    this.coverArt,
+    required this.durationMs,
+  });
+
+  @override
+  int get hashCode =>
+      title.hashCode ^
+      subtitle.hashCode ^
+      artist.hashCode ^
+      albumArtist.hashCode ^
+      album.hashCode ^
+      genre.hashCode ^
+      date.hashCode ^
+      trackNumber.hashCode ^
+      discNumber.hashCode ^
+      lyrics.hashCode ^
+      coverArt.hashCode ^
+      durationMs.hashCode;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is TrackInfo &&
+          runtimeType == other.runtimeType &&
+          title == other.title &&
+          subtitle == other.subtitle &&
+          artist == other.artist &&
+          albumArtist == other.albumArtist &&
+          album == other.album &&
+          genre == other.genre &&
+          date == other.date &&
+          trackNumber == other.trackNumber &&
+          discNumber == other.discNumber &&
+          lyrics == other.lyrics &&
+          coverArt == other.coverArt &&
+          durationMs == other.durationMs;
 }

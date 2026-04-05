@@ -7,6 +7,10 @@ pub struct WebDavEntry {
     pub is_dir: bool,
     pub size: u64,
     pub last_modified: String,
+    pub title: String,
+    pub artist: String,
+    pub album: String,
+    pub duration_ms: u64,
 }
 
 #[frb(opaque)]
@@ -150,6 +154,10 @@ impl WebDavClient {
                 is_dir,
                 size,
                 last_modified,
+                title: String::new(),
+                artist: String::new(),
+                album: String::new(),
+                duration_ms: 0,
             });
         }
 

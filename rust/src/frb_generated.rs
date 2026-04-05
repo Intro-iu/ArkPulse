@@ -39,7 +39,7 @@ flutter_rust_bridge::frb_generated_boilerplate!(
     default_rust_auto_opaque = RustAutoOpaqueMoi,
 );
 pub(crate) const FLUTTER_RUST_BRIDGE_CODEGEN_VERSION: &str = "2.11.1";
-pub(crate) const FLUTTER_RUST_BRIDGE_CODEGEN_CONTENT_HASH: i32 = 1664108729;
+pub(crate) const FLUTTER_RUST_BRIDGE_CODEGEN_CONTENT_HASH: i32 = 1647169078;
 
 // Section: executor
 
@@ -47,6 +47,124 @@ flutter_rust_bridge::frb_generated_default_handler!();
 
 // Section: wire_funcs
 
+fn wire__crate__api__player_api__AudioPlayer_extract_remote_track_info_impl(
+    port_: flutter_rust_bridge::for_generated::MessagePort,
+    ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
+    rust_vec_len_: i32,
+    data_len_: i32,
+) {
+    FLUTTER_RUST_BRIDGE_HANDLER.wrap_async::<flutter_rust_bridge::for_generated::SseCodec, _, _, _>(
+        flutter_rust_bridge::for_generated::TaskInfo {
+            debug_name: "AudioPlayer_extract_remote_track_info",
+            port: Some(port_),
+            mode: flutter_rust_bridge::for_generated::FfiCallMode::Normal,
+        },
+        move || {
+            let message = unsafe {
+                flutter_rust_bridge::for_generated::Dart2RustMessageSse::from_wire(
+                    ptr_,
+                    rust_vec_len_,
+                    data_len_,
+                )
+            };
+            let mut deserializer =
+                flutter_rust_bridge::for_generated::SseDeserializer::new(message);
+            let api_url = <String>::sse_decode(&mut deserializer);
+            let api_username = <String>::sse_decode(&mut deserializer);
+            let api_token = <String>::sse_decode(&mut deserializer);
+            deserializer.end();
+            move |context| async move {
+                transform_result_sse::<_, String>(
+                    (move || async move {
+                        let output_ok =
+                            crate::api::player_api::AudioPlayer::extract_remote_track_info(
+                                api_url,
+                                api_username,
+                                api_token,
+                            )
+                            .await?;
+                        Ok(output_ok)
+                    })()
+                    .await,
+                )
+            }
+        },
+    )
+}
+fn wire__crate__api__player_api__AudioPlayer_get_diagnostics_impl(
+    port_: flutter_rust_bridge::for_generated::MessagePort,
+    ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
+    rust_vec_len_: i32,
+    data_len_: i32,
+) {
+    FLUTTER_RUST_BRIDGE_HANDLER.wrap_async::<flutter_rust_bridge::for_generated::SseCodec, _, _, _>(
+        flutter_rust_bridge::for_generated::TaskInfo {
+            debug_name: "AudioPlayer_get_diagnostics",
+            port: Some(port_),
+            mode: flutter_rust_bridge::for_generated::FfiCallMode::Normal,
+        },
+        move || {
+            let message = unsafe {
+                flutter_rust_bridge::for_generated::Dart2RustMessageSse::from_wire(
+                    ptr_,
+                    rust_vec_len_,
+                    data_len_,
+                )
+            };
+            let mut deserializer =
+                flutter_rust_bridge::for_generated::SseDeserializer::new(message);
+            deserializer.end();
+            move |context| async move {
+                transform_result_sse::<_, ()>(
+                    (move || async move {
+                        let output_ok = Result::<_, ()>::Ok(
+                            crate::api::player_api::AudioPlayer::get_diagnostics().await,
+                        )?;
+                        Ok(output_ok)
+                    })()
+                    .await,
+                )
+            }
+        },
+    )
+}
+fn wire__crate__api__player_api__AudioPlayer_get_progress_impl(
+    port_: flutter_rust_bridge::for_generated::MessagePort,
+    ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
+    rust_vec_len_: i32,
+    data_len_: i32,
+) {
+    FLUTTER_RUST_BRIDGE_HANDLER.wrap_async::<flutter_rust_bridge::for_generated::SseCodec, _, _, _>(
+        flutter_rust_bridge::for_generated::TaskInfo {
+            debug_name: "AudioPlayer_get_progress",
+            port: Some(port_),
+            mode: flutter_rust_bridge::for_generated::FfiCallMode::Normal,
+        },
+        move || {
+            let message = unsafe {
+                flutter_rust_bridge::for_generated::Dart2RustMessageSse::from_wire(
+                    ptr_,
+                    rust_vec_len_,
+                    data_len_,
+                )
+            };
+            let mut deserializer =
+                flutter_rust_bridge::for_generated::SseDeserializer::new(message);
+            deserializer.end();
+            move |context| async move {
+                transform_result_sse::<_, ()>(
+                    (move || async move {
+                        let output_ok = Result::<_, ()>::Ok(
+                            crate::api::player_api::AudioPlayer::get_progress().await,
+                        )?;
+                        Ok(output_ok)
+                    })()
+                    .await,
+                )
+            }
+        },
+    )
+}
 fn wire__crate__api__player_api__AudioPlayer_get_state_impl(
     port_: flutter_rust_bridge::for_generated::MessagePort,
     ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
@@ -84,6 +202,42 @@ fn wire__crate__api__player_api__AudioPlayer_get_state_impl(
         },
     )
 }
+fn wire__crate__api__player_api__AudioPlayer_get_track_info_impl(
+    port_: flutter_rust_bridge::for_generated::MessagePort,
+    ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
+    rust_vec_len_: i32,
+    data_len_: i32,
+) {
+    FLUTTER_RUST_BRIDGE_HANDLER.wrap_async::<flutter_rust_bridge::for_generated::SseCodec, _, _, _>(
+        flutter_rust_bridge::for_generated::TaskInfo {
+            debug_name: "AudioPlayer_get_track_info",
+            port: Some(port_),
+            mode: flutter_rust_bridge::for_generated::FfiCallMode::Normal,
+        },
+        move || {
+            let message = unsafe {
+                flutter_rust_bridge::for_generated::Dart2RustMessageSse::from_wire(
+                    ptr_,
+                    rust_vec_len_,
+                    data_len_,
+                )
+            };
+            let mut deserializer =
+                flutter_rust_bridge::for_generated::SseDeserializer::new(message);
+            deserializer.end();
+            move |context| async move {
+                transform_result_sse::<_, String>(
+                    (move || async move {
+                        let output_ok =
+                            crate::api::player_api::AudioPlayer::get_track_info().await?;
+                        Ok(output_ok)
+                    })()
+                    .await,
+                )
+            }
+        },
+    )
+}
 fn wire__crate__api__player_api__AudioPlayer_init_engine_impl(
     port_: flutter_rust_bridge::for_generated::MessagePort,
     ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
@@ -108,11 +262,9 @@ fn wire__crate__api__player_api__AudioPlayer_init_engine_impl(
                 flutter_rust_bridge::for_generated::SseDeserializer::new(message);
             deserializer.end();
             move |context| async move {
-                transform_result_sse::<_, ()>(
+                transform_result_sse::<_, String>(
                     (move || async move {
-                        let output_ok = Result::<_, ()>::Ok({
-                            crate::api::player_api::AudioPlayer::init_engine().await;
-                        })?;
+                        let output_ok = crate::api::player_api::AudioPlayer::init_engine().await?;
                         Ok(output_ok)
                     })()
                     .await,
@@ -308,6 +460,43 @@ fn wire__crate__api__player_api__AudioPlayer_resume_impl(
         },
     )
 }
+fn wire__crate__api__player_api__AudioPlayer_seek_impl(
+    port_: flutter_rust_bridge::for_generated::MessagePort,
+    ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
+    rust_vec_len_: i32,
+    data_len_: i32,
+) {
+    FLUTTER_RUST_BRIDGE_HANDLER.wrap_async::<flutter_rust_bridge::for_generated::SseCodec, _, _, _>(
+        flutter_rust_bridge::for_generated::TaskInfo {
+            debug_name: "AudioPlayer_seek",
+            port: Some(port_),
+            mode: flutter_rust_bridge::for_generated::FfiCallMode::Normal,
+        },
+        move || {
+            let message = unsafe {
+                flutter_rust_bridge::for_generated::Dart2RustMessageSse::from_wire(
+                    ptr_,
+                    rust_vec_len_,
+                    data_len_,
+                )
+            };
+            let mut deserializer =
+                flutter_rust_bridge::for_generated::SseDeserializer::new(message);
+            let api_position_ms = <i64>::sse_decode(&mut deserializer);
+            deserializer.end();
+            move |context| async move {
+                transform_result_sse::<_, String>(
+                    (move || async move {
+                        let output_ok =
+                            crate::api::player_api::AudioPlayer::seek(api_position_ms).await?;
+                        Ok(output_ok)
+                    })()
+                    .await,
+                )
+            }
+        },
+    )
+}
 fn wire__crate__api__player_api__AudioPlayer_stop_impl(
     port_: flutter_rust_bridge::for_generated::MessagePort,
     ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
@@ -337,80 +526,6 @@ fn wire__crate__api__player_api__AudioPlayer_stop_impl(
                         let output_ok = Result::<_, ()>::Ok({
                             crate::api::player_api::AudioPlayer::stop().await;
                         })?;
-                        Ok(output_ok)
-                    })()
-                    .await,
-                )
-            }
-        },
-    )
-}
-fn wire__crate__api__player_api__AudioPlayer_get_progress_impl(
-    port_: flutter_rust_bridge::for_generated::MessagePort,
-    ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
-    rust_vec_len_: i32,
-    data_len_: i32,
-) {
-    FLUTTER_RUST_BRIDGE_HANDLER.wrap_async::<flutter_rust_bridge::for_generated::SseCodec, _, _, _>(
-        flutter_rust_bridge::for_generated::TaskInfo {
-            debug_name: "AudioPlayer_get_progress",
-            port: Some(port_),
-            mode: flutter_rust_bridge::for_generated::FfiCallMode::Normal,
-        },
-        move || {
-            let message = unsafe {
-                flutter_rust_bridge::for_generated::Dart2RustMessageSse::from_wire(
-                    ptr_,
-                    rust_vec_len_,
-                    data_len_,
-                )
-            };
-            let mut deserializer =
-                flutter_rust_bridge::for_generated::SseDeserializer::new(message);
-            deserializer.end();
-            move |context| async move {
-                transform_result_sse::<_, ()>(
-                    (move || async move {
-                        let output_ok = Result::<_, ()>::Ok(
-                            crate::api::player_api::AudioPlayer::get_progress().await,
-                        )?;
-                        Ok(output_ok)
-                    })()
-                    .await,
-                )
-            }
-        },
-    )
-}
-fn wire__crate__api__player_api__AudioPlayer_seek_impl(
-    port_: flutter_rust_bridge::for_generated::MessagePort,
-    ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
-    rust_vec_len_: i32,
-    data_len_: i32,
-) {
-    FLUTTER_RUST_BRIDGE_HANDLER.wrap_async::<flutter_rust_bridge::for_generated::SseCodec, _, _, _>(
-        flutter_rust_bridge::for_generated::TaskInfo {
-            debug_name: "AudioPlayer_seek",
-            port: Some(port_),
-            mode: flutter_rust_bridge::for_generated::FfiCallMode::Normal,
-        },
-        move || {
-            let message = unsafe {
-                flutter_rust_bridge::for_generated::Dart2RustMessageSse::from_wire(
-                    ptr_,
-                    rust_vec_len_,
-                    data_len_,
-                )
-            };
-            let mut deserializer =
-                flutter_rust_bridge::for_generated::SseDeserializer::new(message);
-            let api_position_ms = <u64>::sse_decode(&mut deserializer);
-            deserializer.end();
-            move |context| async move {
-                transform_result_sse::<_, String>(
-                    (move || async move {
-                        let output_ok =
-                            crate::api::player_api::AudioPlayer::seek(api_position_ms).await?;
                         Ok(output_ok)
                     })()
                     .await,
@@ -1029,6 +1144,13 @@ impl SseDecode for bool {
     }
 }
 
+impl SseDecode for i64 {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
+        deserializer.cursor.read_i64::<NativeEndian>().unwrap()
+    }
+}
+
 impl SseDecode for Vec<u8> {
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
@@ -1052,6 +1174,53 @@ impl SseDecode for Vec<crate::api::webdav_api::WebDavEntry> {
             ));
         }
         return ans_;
+    }
+}
+
+impl SseDecode for Option<Vec<u8>> {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
+        if (<bool>::sse_decode(deserializer)) {
+            return Some(<Vec<u8>>::sse_decode(deserializer));
+        } else {
+            return None;
+        }
+    }
+}
+
+impl SseDecode for crate::api::player_api::PlaybackDiagnostics {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
+        let mut var_path = <String>::sse_decode(deserializer);
+        let mut var_streamOpenFilename = <String>::sse_decode(deserializer);
+        let mut var_fileError = <String>::sse_decode(deserializer);
+        let mut var_pausedForCache = <bool>::sse_decode(deserializer);
+        let mut var_idleActive = <bool>::sse_decode(deserializer);
+        let mut var_eofReached = <bool>::sse_decode(deserializer);
+        let mut var_durationMs = <i64>::sse_decode(deserializer);
+        let mut var_positionMs = <i64>::sse_decode(deserializer);
+        return crate::api::player_api::PlaybackDiagnostics {
+            path: var_path,
+            stream_open_filename: var_streamOpenFilename,
+            file_error: var_fileError,
+            paused_for_cache: var_pausedForCache,
+            idle_active: var_idleActive,
+            eof_reached: var_eofReached,
+            duration_ms: var_durationMs,
+            position_ms: var_positionMs,
+        };
+    }
+}
+
+impl SseDecode for crate::api::player_api::PlaybackProgress {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
+        let mut var_positionMs = <i64>::sse_decode(deserializer);
+        let mut var_durationMs = <i64>::sse_decode(deserializer);
+        return crate::api::player_api::PlaybackProgress {
+            position_ms: var_positionMs,
+            duration_ms: var_durationMs,
+        };
     }
 }
 
@@ -1080,14 +1249,34 @@ impl SseDecode for crate::api::player_api::PlaybackState {
     }
 }
 
-impl SseDecode for crate::api::player_api::PlaybackProgress {
+impl SseDecode for crate::api::player_api::TrackInfo {
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
-        let mut var_position_ms = <u64>::sse_decode(deserializer);
-        let mut var_duration_ms = <u64>::sse_decode(deserializer);
-        return crate::api::player_api::PlaybackProgress {
-            position_ms: var_position_ms,
-            duration_ms: var_duration_ms,
+        let mut var_title = <String>::sse_decode(deserializer);
+        let mut var_subtitle = <String>::sse_decode(deserializer);
+        let mut var_artist = <String>::sse_decode(deserializer);
+        let mut var_albumArtist = <String>::sse_decode(deserializer);
+        let mut var_album = <String>::sse_decode(deserializer);
+        let mut var_genre = <String>::sse_decode(deserializer);
+        let mut var_date = <String>::sse_decode(deserializer);
+        let mut var_trackNumber = <String>::sse_decode(deserializer);
+        let mut var_discNumber = <String>::sse_decode(deserializer);
+        let mut var_lyrics = <String>::sse_decode(deserializer);
+        let mut var_coverArt = <Option<Vec<u8>>>::sse_decode(deserializer);
+        let mut var_durationMs = <i64>::sse_decode(deserializer);
+        return crate::api::player_api::TrackInfo {
+            title: var_title,
+            subtitle: var_subtitle,
+            artist: var_artist,
+            album_artist: var_albumArtist,
+            album: var_album,
+            genre: var_genre,
+            date: var_date,
+            track_number: var_trackNumber,
+            disc_number: var_discNumber,
+            lyrics: var_lyrics,
+            cover_art: var_coverArt,
+            duration_ms: var_durationMs,
         };
     }
 }
@@ -1126,12 +1315,20 @@ impl SseDecode for crate::api::webdav_api::WebDavEntry {
         let mut var_isDir = <bool>::sse_decode(deserializer);
         let mut var_size = <u64>::sse_decode(deserializer);
         let mut var_lastModified = <String>::sse_decode(deserializer);
+        let mut var_title = <String>::sse_decode(deserializer);
+        let mut var_artist = <String>::sse_decode(deserializer);
+        let mut var_album = <String>::sse_decode(deserializer);
+        let mut var_durationMs = <u64>::sse_decode(deserializer);
         return crate::api::webdav_api::WebDavEntry {
             path: var_path,
             name: var_name,
             is_dir: var_isDir,
             size: var_size,
             last_modified: var_lastModified,
+            title: var_title,
+            artist: var_artist,
+            album: var_album,
+            duration_ms: var_durationMs,
         };
     }
 }
@@ -1152,63 +1349,80 @@ fn pde_ffi_dispatcher_primary_impl(
 ) {
     // Codec=Pde (Serialization + dispatch), see doc to use other codecs
     match func_id {
-        1 => wire__crate__api__player_api__AudioPlayer_get_state_impl(
+        1 => wire__crate__api__player_api__AudioPlayer_extract_remote_track_info_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        2 => wire__crate__api__player_api__AudioPlayer_init_engine_impl(
+        2 => wire__crate__api__player_api__AudioPlayer_get_diagnostics_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        3 => wire__crate__api__player_api__AudioPlayer_new_impl(port, ptr, rust_vec_len, data_len),
-        4 => {
+        3 => wire__crate__api__player_api__AudioPlayer_get_progress_impl(
+            port,
+            ptr,
+            rust_vec_len,
+            data_len,
+        ),
+        4 => wire__crate__api__player_api__AudioPlayer_get_state_impl(
+            port,
+            ptr,
+            rust_vec_len,
+            data_len,
+        ),
+        5 => wire__crate__api__player_api__AudioPlayer_get_track_info_impl(
+            port,
+            ptr,
+            rust_vec_len,
+            data_len,
+        ),
+        6 => wire__crate__api__player_api__AudioPlayer_init_engine_impl(
+            port,
+            ptr,
+            rust_vec_len,
+            data_len,
+        ),
+        7 => wire__crate__api__player_api__AudioPlayer_new_impl(port, ptr, rust_vec_len, data_len),
+        8 => {
             wire__crate__api__player_api__AudioPlayer_pause_impl(port, ptr, rust_vec_len, data_len)
         }
-        5 => wire__crate__api__player_api__AudioPlayer_play_local_file_impl(
+        9 => wire__crate__api__player_api__AudioPlayer_play_local_file_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        6 => wire__crate__api__player_api__AudioPlayer_play_remote_file_impl(
+        10 => wire__crate__api__player_api__AudioPlayer_play_remote_file_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        7 => {
+        11 => {
             wire__crate__api__player_api__AudioPlayer_resume_impl(port, ptr, rust_vec_len, data_len)
         }
-        8 => wire__crate__api__player_api__AudioPlayer_stop_impl(port, ptr, rust_vec_len, data_len),
-        21 => wire__crate__api__player_api__AudioPlayer_get_progress_impl(
+        12 => {
+            wire__crate__api__player_api__AudioPlayer_seek_impl(port, ptr, rust_vec_len, data_len)
+        }
+        13 => {
+            wire__crate__api__player_api__AudioPlayer_stop_impl(port, ptr, rust_vec_len, data_len)
+        }
+        20 => wire__crate__api__webdav_api__WebDavClient_list_all_audio_recursive_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        22 => wire__crate__api__player_api__AudioPlayer_seek_impl(
+        21 => wire__crate__api__webdav_api__WebDavClient_list_directory_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        15 => wire__crate__api__webdav_api__WebDavClient_list_all_audio_recursive_impl(
-            port,
-            ptr,
-            rust_vec_len,
-            data_len,
-        ),
-        16 => wire__crate__api__webdav_api__WebDavClient_list_directory_impl(
-            port,
-            ptr,
-            rust_vec_len,
-            data_len,
-        ),
-        20 => wire__crate__api__simple__init_app_impl(port, ptr, rust_vec_len, data_len),
+        25 => wire__crate__api__simple__init_app_impl(port, ptr, rust_vec_len, data_len),
         _ => unreachable!(),
     }
 }
@@ -1221,39 +1435,39 @@ fn pde_ffi_dispatcher_sync_impl(
 ) -> flutter_rust_bridge::for_generated::WireSyncRust2DartSse {
     // Codec=Pde (Serialization + dispatch), see doc to use other codecs
     match func_id {
-        9 => wire__crate__api__webdav_api__WebDavClient_auto_accessor_get_server_url_impl(
+        14 => wire__crate__api__webdav_api__WebDavClient_auto_accessor_get_server_url_impl(
             ptr,
             rust_vec_len,
             data_len,
         ),
-        10 => wire__crate__api__webdav_api__WebDavClient_auto_accessor_get_token_impl(
+        15 => wire__crate__api__webdav_api__WebDavClient_auto_accessor_get_token_impl(
             ptr,
             rust_vec_len,
             data_len,
         ),
-        11 => wire__crate__api__webdav_api__WebDavClient_auto_accessor_get_username_impl(
+        16 => wire__crate__api__webdav_api__WebDavClient_auto_accessor_get_username_impl(
             ptr,
             rust_vec_len,
             data_len,
         ),
-        12 => wire__crate__api__webdav_api__WebDavClient_auto_accessor_set_server_url_impl(
+        17 => wire__crate__api__webdav_api__WebDavClient_auto_accessor_set_server_url_impl(
             ptr,
             rust_vec_len,
             data_len,
         ),
-        13 => wire__crate__api__webdav_api__WebDavClient_auto_accessor_set_token_impl(
+        18 => wire__crate__api__webdav_api__WebDavClient_auto_accessor_set_token_impl(
             ptr,
             rust_vec_len,
             data_len,
         ),
-        14 => wire__crate__api__webdav_api__WebDavClient_auto_accessor_set_username_impl(
+        19 => wire__crate__api__webdav_api__WebDavClient_auto_accessor_set_username_impl(
             ptr,
             rust_vec_len,
             data_len,
         ),
-        17 => wire__crate__api__webdav_api__WebDavClient_new_impl(ptr, rust_vec_len, data_len),
-        18 => wire__crate__api__simple__add_impl(ptr, rust_vec_len, data_len),
-        19 => wire__crate__api__simple__greet_impl(ptr, rust_vec_len, data_len),
+        22 => wire__crate__api__webdav_api__WebDavClient_new_impl(ptr, rust_vec_len, data_len),
+        23 => wire__crate__api__simple__add_impl(ptr, rust_vec_len, data_len),
+        24 => wire__crate__api__simple__greet_impl(ptr, rust_vec_len, data_len),
         _ => unreachable!(),
     }
 }
@@ -1291,6 +1505,54 @@ impl flutter_rust_bridge::IntoIntoDart<FrbWrapper<WebDavClient>> for WebDavClien
 }
 
 // Codec=Dco (DartCObject based), see doc to use other codecs
+impl flutter_rust_bridge::IntoDart for crate::api::player_api::PlaybackDiagnostics {
+    fn into_dart(self) -> flutter_rust_bridge::for_generated::DartAbi {
+        [
+            self.path.into_into_dart().into_dart(),
+            self.stream_open_filename.into_into_dart().into_dart(),
+            self.file_error.into_into_dart().into_dart(),
+            self.paused_for_cache.into_into_dart().into_dart(),
+            self.idle_active.into_into_dart().into_dart(),
+            self.eof_reached.into_into_dart().into_dart(),
+            self.duration_ms.into_into_dart().into_dart(),
+            self.position_ms.into_into_dart().into_dart(),
+        ]
+        .into_dart()
+    }
+}
+impl flutter_rust_bridge::for_generated::IntoDartExceptPrimitive
+    for crate::api::player_api::PlaybackDiagnostics
+{
+}
+impl flutter_rust_bridge::IntoIntoDart<crate::api::player_api::PlaybackDiagnostics>
+    for crate::api::player_api::PlaybackDiagnostics
+{
+    fn into_into_dart(self) -> crate::api::player_api::PlaybackDiagnostics {
+        self
+    }
+}
+// Codec=Dco (DartCObject based), see doc to use other codecs
+impl flutter_rust_bridge::IntoDart for crate::api::player_api::PlaybackProgress {
+    fn into_dart(self) -> flutter_rust_bridge::for_generated::DartAbi {
+        [
+            self.position_ms.into_into_dart().into_dart(),
+            self.duration_ms.into_into_dart().into_dart(),
+        ]
+        .into_dart()
+    }
+}
+impl flutter_rust_bridge::for_generated::IntoDartExceptPrimitive
+    for crate::api::player_api::PlaybackProgress
+{
+}
+impl flutter_rust_bridge::IntoIntoDart<crate::api::player_api::PlaybackProgress>
+    for crate::api::player_api::PlaybackProgress
+{
+    fn into_into_dart(self) -> crate::api::player_api::PlaybackProgress {
+        self
+    }
+}
+// Codec=Dco (DartCObject based), see doc to use other codecs
 impl flutter_rust_bridge::IntoDart for crate::api::player_api::PlaybackState {
     fn into_dart(self) -> flutter_rust_bridge::for_generated::DartAbi {
         match self {
@@ -1318,23 +1580,33 @@ impl flutter_rust_bridge::IntoIntoDart<crate::api::player_api::PlaybackState>
     }
 }
 // Codec=Dco (DartCObject based), see doc to use other codecs
-impl flutter_rust_bridge::IntoDart for crate::api::player_api::PlaybackProgress {
+impl flutter_rust_bridge::IntoDart for crate::api::player_api::TrackInfo {
     fn into_dart(self) -> flutter_rust_bridge::for_generated::DartAbi {
         [
-            self.position_ms.into_into_dart().into_dart(),
+            self.title.into_into_dart().into_dart(),
+            self.subtitle.into_into_dart().into_dart(),
+            self.artist.into_into_dart().into_dart(),
+            self.album_artist.into_into_dart().into_dart(),
+            self.album.into_into_dart().into_dart(),
+            self.genre.into_into_dart().into_dart(),
+            self.date.into_into_dart().into_dart(),
+            self.track_number.into_into_dart().into_dart(),
+            self.disc_number.into_into_dart().into_dart(),
+            self.lyrics.into_into_dart().into_dart(),
+            self.cover_art.into_into_dart().into_dart(),
             self.duration_ms.into_into_dart().into_dart(),
         ]
         .into_dart()
     }
 }
 impl flutter_rust_bridge::for_generated::IntoDartExceptPrimitive
-    for crate::api::player_api::PlaybackProgress
+    for crate::api::player_api::TrackInfo
 {
 }
-impl flutter_rust_bridge::IntoIntoDart<crate::api::player_api::PlaybackProgress>
-    for crate::api::player_api::PlaybackProgress
+impl flutter_rust_bridge::IntoIntoDart<crate::api::player_api::TrackInfo>
+    for crate::api::player_api::TrackInfo
 {
-    fn into_into_dart(self) -> crate::api::player_api::PlaybackProgress {
+    fn into_into_dart(self) -> crate::api::player_api::TrackInfo {
         self
     }
 }
@@ -1347,6 +1619,10 @@ impl flutter_rust_bridge::IntoDart for crate::api::webdav_api::WebDavEntry {
             self.is_dir.into_into_dart().into_dart(),
             self.size.into_into_dart().into_dart(),
             self.last_modified.into_into_dart().into_dart(),
+            self.title.into_into_dart().into_dart(),
+            self.artist.into_into_dart().into_dart(),
+            self.album.into_into_dart().into_dart(),
+            self.duration_ms.into_into_dart().into_dart(),
         ]
         .into_dart()
     }
@@ -1413,6 +1689,13 @@ impl SseEncode for bool {
     }
 }
 
+impl SseEncode for i64 {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
+        serializer.cursor.write_i64::<NativeEndian>(self).unwrap();
+    }
+}
+
 impl SseEncode for Vec<u8> {
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
@@ -1430,6 +1713,38 @@ impl SseEncode for Vec<crate::api::webdav_api::WebDavEntry> {
         for item in self {
             <crate::api::webdav_api::WebDavEntry>::sse_encode(item, serializer);
         }
+    }
+}
+
+impl SseEncode for Option<Vec<u8>> {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
+        <bool>::sse_encode(self.is_some(), serializer);
+        if let Some(value) = self {
+            <Vec<u8>>::sse_encode(value, serializer);
+        }
+    }
+}
+
+impl SseEncode for crate::api::player_api::PlaybackDiagnostics {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
+        <String>::sse_encode(self.path, serializer);
+        <String>::sse_encode(self.stream_open_filename, serializer);
+        <String>::sse_encode(self.file_error, serializer);
+        <bool>::sse_encode(self.paused_for_cache, serializer);
+        <bool>::sse_encode(self.idle_active, serializer);
+        <bool>::sse_encode(self.eof_reached, serializer);
+        <i64>::sse_encode(self.duration_ms, serializer);
+        <i64>::sse_encode(self.position_ms, serializer);
+    }
+}
+
+impl SseEncode for crate::api::player_api::PlaybackProgress {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
+        <i64>::sse_encode(self.position_ms, serializer);
+        <i64>::sse_encode(self.duration_ms, serializer);
     }
 }
 
@@ -1457,11 +1772,21 @@ impl SseEncode for crate::api::player_api::PlaybackState {
     }
 }
 
-impl SseEncode for crate::api::player_api::PlaybackProgress {
+impl SseEncode for crate::api::player_api::TrackInfo {
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
-        <u64>::sse_encode(self.position_ms, serializer);
-        <u64>::sse_encode(self.duration_ms, serializer);
+        <String>::sse_encode(self.title, serializer);
+        <String>::sse_encode(self.subtitle, serializer);
+        <String>::sse_encode(self.artist, serializer);
+        <String>::sse_encode(self.album_artist, serializer);
+        <String>::sse_encode(self.album, serializer);
+        <String>::sse_encode(self.genre, serializer);
+        <String>::sse_encode(self.date, serializer);
+        <String>::sse_encode(self.track_number, serializer);
+        <String>::sse_encode(self.disc_number, serializer);
+        <String>::sse_encode(self.lyrics, serializer);
+        <Option<Vec<u8>>>::sse_encode(self.cover_art, serializer);
+        <i64>::sse_encode(self.duration_ms, serializer);
     }
 }
 
@@ -1502,6 +1827,10 @@ impl SseEncode for crate::api::webdav_api::WebDavEntry {
         <bool>::sse_encode(self.is_dir, serializer);
         <u64>::sse_encode(self.size, serializer);
         <String>::sse_encode(self.last_modified, serializer);
+        <String>::sse_encode(self.title, serializer);
+        <String>::sse_encode(self.artist, serializer);
+        <String>::sse_encode(self.album, serializer);
+        <u64>::sse_encode(self.duration_ms, serializer);
     }
 }
 

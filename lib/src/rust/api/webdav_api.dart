@@ -6,7 +6,7 @@
 import '../frb_generated.dart';
 import 'package:flutter_rust_bridge/flutter_rust_bridge_for_generated.dart';
 
-// These functions are ignored because they are not marked as `pub`: `propfind`
+// These functions are ignored because they are not marked as `pub`: `propfind`, `resolve_request_url`
 
 // Rust type: RustOpaqueMoi<flutter_rust_bridge::for_generated::RustAutoOpaqueInner<WebDavClient>>
 abstract class WebDavClient implements RustOpaqueInterface {
@@ -47,6 +47,10 @@ class WebDavEntry {
   final bool isDir;
   final BigInt size;
   final String lastModified;
+  final String title;
+  final String artist;
+  final String album;
+  final BigInt durationMs;
 
   const WebDavEntry({
     required this.path,
@@ -54,6 +58,10 @@ class WebDavEntry {
     required this.isDir,
     required this.size,
     required this.lastModified,
+    required this.title,
+    required this.artist,
+    required this.album,
+    required this.durationMs,
   });
 
   @override
@@ -62,7 +70,11 @@ class WebDavEntry {
       name.hashCode ^
       isDir.hashCode ^
       size.hashCode ^
-      lastModified.hashCode;
+      lastModified.hashCode ^
+      title.hashCode ^
+      artist.hashCode ^
+      album.hashCode ^
+      durationMs.hashCode;
 
   @override
   bool operator ==(Object other) =>
@@ -73,5 +85,9 @@ class WebDavEntry {
           name == other.name &&
           isDir == other.isDir &&
           size == other.size &&
-          lastModified == other.lastModified;
+          lastModified == other.lastModified &&
+          title == other.title &&
+          artist == other.artist &&
+          album == other.album &&
+          durationMs == other.durationMs;
 }

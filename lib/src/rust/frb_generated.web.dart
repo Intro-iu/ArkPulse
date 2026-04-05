@@ -73,13 +73,28 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   bool dco_decode_bool(dynamic raw);
 
   @protected
+  PlatformInt64 dco_decode_i_64(dynamic raw);
+
+  @protected
   Uint8List dco_decode_list_prim_u_8_strict(dynamic raw);
 
   @protected
   List<WebDavEntry> dco_decode_list_web_dav_entry(dynamic raw);
 
   @protected
+  Uint8List? dco_decode_opt_list_prim_u_8_strict(dynamic raw);
+
+  @protected
+  PlaybackDiagnostics dco_decode_playback_diagnostics(dynamic raw);
+
+  @protected
+  PlaybackProgress dco_decode_playback_progress(dynamic raw);
+
+  @protected
   PlaybackState dco_decode_playback_state(dynamic raw);
+
+  @protected
+  TrackInfo dco_decode_track_info(dynamic raw);
 
   @protected
   BigInt dco_decode_u_64(dynamic raw);
@@ -139,13 +154,30 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   bool sse_decode_bool(SseDeserializer deserializer);
 
   @protected
+  PlatformInt64 sse_decode_i_64(SseDeserializer deserializer);
+
+  @protected
   Uint8List sse_decode_list_prim_u_8_strict(SseDeserializer deserializer);
 
   @protected
   List<WebDavEntry> sse_decode_list_web_dav_entry(SseDeserializer deserializer);
 
   @protected
+  Uint8List? sse_decode_opt_list_prim_u_8_strict(SseDeserializer deserializer);
+
+  @protected
+  PlaybackDiagnostics sse_decode_playback_diagnostics(
+    SseDeserializer deserializer,
+  );
+
+  @protected
+  PlaybackProgress sse_decode_playback_progress(SseDeserializer deserializer);
+
+  @protected
   PlaybackState sse_decode_playback_state(SseDeserializer deserializer);
+
+  @protected
+  TrackInfo sse_decode_track_info(SseDeserializer deserializer);
 
   @protected
   BigInt sse_decode_u_64(SseDeserializer deserializer);
@@ -214,6 +246,9 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   void sse_encode_bool(bool self, SseSerializer serializer);
 
   @protected
+  void sse_encode_i_64(PlatformInt64 self, SseSerializer serializer);
+
+  @protected
   void sse_encode_list_prim_u_8_strict(
     Uint8List self,
     SseSerializer serializer,
@@ -226,7 +261,28 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   );
 
   @protected
+  void sse_encode_opt_list_prim_u_8_strict(
+    Uint8List? self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_playback_diagnostics(
+    PlaybackDiagnostics self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_playback_progress(
+    PlaybackProgress self,
+    SseSerializer serializer,
+  );
+
+  @protected
   void sse_encode_playback_state(PlaybackState self, SseSerializer serializer);
+
+  @protected
+  void sse_encode_track_info(TrackInfo self, SseSerializer serializer);
 
   @protected
   void sse_encode_u_64(BigInt self, SseSerializer serializer);
