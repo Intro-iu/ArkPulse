@@ -24,8 +24,8 @@ ArkPulse (codename: *The Pulse*) is designed with a "Flat Industrial" Neo-Brutal
 ### UI & User Experience
 - [x] **Virtual Playlists System**: Support for creating, maintaining, and deleting local virtual playlists mapping to remote WebDAV files.
 - [x] **Neo-Brutalism Interface**: Strict flat sci-fi industrial aesthetic with mechanical interactions, responsive hover states, and dynamic glow matrices.
-- [ ] **State Persistence & Caching**: Cache traversed file trees in SQLite to avoid recurring full sweeps upon restart.
-- [ ] **Global Deep Search**: Multi-threaded fuzzy filtering across the entire synced WebDAV dashboard grid.
+- [x] **State Persistence & Caching**: Cache traversed file trees in SQLite to avoid recurring full sweeps upon restart.
+- [x] **Global Deep Search**: Multi-threaded fuzzy filtering across the entire synced WebDAV dashboard grid.
 
 ---
 
