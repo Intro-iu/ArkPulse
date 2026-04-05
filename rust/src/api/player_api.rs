@@ -153,6 +153,7 @@ impl Drop for RuntimeMpv {
 
 impl RuntimeMpv {
     fn new() -> Result<Self, String> {
+        ensure_mpv_numeric_locale();
         let library = load_mpv_library()?;
         let mpv_client_api_version: MpvClientApiVersionFn =
             load_symbol(&library, b"mpv_client_api_version\0")?;
@@ -326,6 +327,13 @@ impl RuntimeMpv {
                 .into_owned()
         };
         Err(format!("{context}: {message}"))
+    }
+}
+
+fn ensure_mpv_numeric_locale() {
+    #[cfg(target_os = "linux")]
+    unsafe {
+        libc::setlocale(libc::LC_NUMERIC, b"C\0".as_ptr().cast());
     }
 }
 
