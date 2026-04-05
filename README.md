@@ -38,13 +38,13 @@ ArkPulse (codename: *The Pulse*) is designed with a "Bright Orthogonal Industria
 
 ## 📝 TODO List
 ### Priority: High (Critical Integration)
-- [ ] **Player UI Fix**: Resolve layout overflow in `PlayerView` and connect to real `AppState` track data.
-- [ ] **Metadata Scraper**: Implement Rust-side ID3/Vorbis tag extraction using `symphonia`.
+- [x] **Player UI Fix**: Resolve layout overflow in `PlayerView` and connect to real `AppState` track data.
+- [x] **Metadata Scraper**: Implement Rust-side ID3/Vorbis tag extraction using `symphonia`.
 - [ ] **Sync State Persistence**: Store listed songs in SQLite to avoid re-scanning on every sync.
-- [ ] **Lyric Integration**: Wire the lyric scraper to the player view.
+- [x] **Lyric Integration**: Wire the lyric scraper to the player view.
 
 ### Priority: Medium (UX & Organization)
-- [ ] **Playlist System**: Create, rename, and manage local playlists referencing WebDAV tracks.
+- [x] **Playlist System**: Create, rename, and manage local playlists referencing WebDAV tracks.
 - [ ] **Global Search**: Complete the dashboard search logic to filter across all synced tracks.
 - [ ] **Audio Visualizer**: Implement real-time frequency data pass-through from Rust to Flutter.
 
