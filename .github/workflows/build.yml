@@ -109,7 +109,7 @@ jobs:
         if: matrix.target == 'linux'
         run: |
           # Install fpm for native package building
-          sudo apt-get install -y ruby ruby-dev rubygems zstd
+          sudo apt-get install -y ruby ruby-dev rubygems zstd libarchive-tools
           sudo gem install fpm
           
           # Setup filesystem structure
