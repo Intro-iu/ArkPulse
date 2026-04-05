@@ -103,7 +103,7 @@ jobs:
         shell: pwsh
         run: |
           iscc /dAppVersion=${{ env.APP_VERSION }} windows/installer.iss
-          Move-Item "windows/Output/arkpulse-windows-setup.exe" "${{ matrix.artifact }}-${{ env.APP_VERSION }}-setup.exe"
+          Move-Item "windows/Output/arkpulse-windows-setup.exe" "ArkPulse_${{ env.APP_VERSION }}_windows_x64_setup.exe"
 
       - name: Compile Linux Packages
         if: matrix.target == 'linux'
@@ -139,33 +139,34 @@ jobs:
           
           # Build .deb
           fpm -s dir -t deb -n arkpulse -v ${{ env.APP_VERSION }} --architecture amd64 -C $PKG_ROOT .
-          mv arkpulse_${{ env.APP_VERSION }}_amd64.deb "${{ matrix.artifact }}-${{ env.APP_VERSION }}.deb"
           
           # Build pacman
-          fpm -s dir -t pacman -n arkpulse -v ${{ env.APP_VERSION }} --architecture x86_64 -C $PKG_ROOT .
-          mv arkpulse-${{ env.APP_VERSION }}-1-x86_64.pkg.tar.zst "${{ matrix.artifact }}-${{ env.APP_VERSION }}.pkg.tar.zst"
+          PACMAN_VER=$(echo ${{ env.APP_VERSION }} | tr '-' '.')
+          fpm -s dir -t pacman -n arkpulse -v $PACMAN_VER --architecture x86_64 -C $PKG_ROOT .
+          mv arkpulse-${PACMAN_VER}-1-x86_64.pkg.tar.zst arkpulse_${{ env.APP_VERSION }}_x86_64.pkg.tar.zst
 
       # ── Upload build artifact ─────────────────────────────────
       - name: Upload Windows Setup
         if: matrix.target == 'windows'
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ matrix.artifact }}-Setup-${{ env.APP_VERSION }}
-          path: ${{ matrix.artifact }}-${{ env.APP_VERSION }}-setup.exe
+          name: ArkPulse_${{ env.APP_VERSION }}_windows_x64_setup
+          path: ArkPulse_${{ env.APP_VERSION }}_windows_x64_setup.exe
 
       - name: Upload Linux DEB
         if: matrix.target == 'linux'
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ matrix.artifact }}-DEB-${{ env.APP_VERSION }}
-          path: ${{ matrix.artifact }}-${{ env.APP_VERSION }}.deb
+          name: arkpulse_${{ env.APP_VERSION }}_amd64_deb
+          path: arkpulse_${{ env.APP_VERSION }}_amd64.deb
 
       - name: Upload Linux Pacman
         if: matrix.target == 'linux'
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ matrix.artifact }}-Pacman-${{ env.APP_VERSION }}
-          path: ${{ matrix.artifact }}-${{ env.APP_VERSION }}.pkg.tar.zst
+          name: arkpulse_${{ env.APP_VERSION }}_x86_64_pacman
+          path: arkpulse_${{ env.APP_VERSION }}_x86_64.pkg.tar.zst
+
 
   # ── Release (tag-triggered only) ────────────────────────────────
   release:
