@@ -22,6 +22,8 @@ class AppState extends ChangeNotifier {
   final Random _random = Random();
   bool _initialized = false;
   ScrapedSong? _currentTrack;
+  TrackInfo? _currentTrackInfo;
+  PlaybackDiagnostics? _playbackDiagnostics;
   String? _playbackErrorMessage;
   List<ScrapedSong> _playbackQueue = const [];
   int _queueIndex = -1;
@@ -35,11 +37,14 @@ class AppState extends ChangeNotifier {
   int? _seekPreviewPositionMs;
   int _seekRequestSerial = 0;
   int? _pendingSeekPositionMs;
+  bool _suppressAutoAdvance = false;
 
   List<WebDavConfig> get webDavConfigs => List.unmodifiable(_webDavConfigs);
   List<Playlist> get playlists => List.unmodifiable(_playlists);
   bool get isInitialized => _initialized;
   ScrapedSong? get currentTrack => _currentTrack;
+  TrackInfo? get currentTrackInfo => _currentTrackInfo;
+  PlaybackDiagnostics? get playbackDiagnostics => _playbackDiagnostics;
   String? get playbackErrorMessage => _playbackErrorMessage;
   List<ScrapedSong> get playbackQueue => List.unmodifiable(_playbackQueue);
   int get queueIndex => _queueIndex;
@@ -50,6 +55,7 @@ class AppState extends ChangeNotifier {
   int get playbackDurationMs => _playbackDurationMs;
   bool get isSeeking => _isSeeking;
   bool get hasPendingSeek => _pendingSeekPositionMs != null;
+  bool get hasResolvedCurrentTrackMetadata => _currentTrackInfo != null;
   int get displayedPlaybackPositionMs =>
       _seekPreviewPositionMs ?? _pendingSeekPositionMs ?? _playbackPositionMs;
   double? get playbackProgress {
@@ -64,18 +70,18 @@ class AppState extends ChangeNotifier {
     final rows = await database.loadWebDavConfigs();
     for (final row in rows) {
       final config = WebDavConfig.fromDb(row);
-      final songs = (await database.loadScrapedSongs(config.id))
-          .map(ScrapedSong.fromDb)
-          .toList();
+      final songs = (await database.loadScrapedSongs(
+        config.id,
+      )).map(ScrapedSong.fromDb).toList();
       config.songs = songs;
       config.state = songs.isEmpty ? ScrapeState.idle : ScrapeState.success;
       _webDavConfigs.add(config);
     }
     final playlistRows = await database.loadPlaylists();
     for (final row in playlistRows) {
-      final tracks = (await database.loadPlaylistTracks(row['id'] as String))
-          .map(PlaylistTrack.fromDb)
-          .toList();
+      final tracks = (await database.loadPlaylistTracks(
+        row['id'] as String,
+      )).map(PlaylistTrack.fromDb).toList();
       _playlists.add(Playlist.fromDb(row, tracks: tracks));
     }
     _initialized = true;
@@ -149,7 +155,9 @@ class AppState extends ChangeNotifier {
     config.username = username;
     config.password = password;
     config.davPath = davPath;
-    config.state = config.songs.isEmpty ? ScrapeState.idle : ScrapeState.success;
+    config.state = config.songs.isEmpty
+        ? ScrapeState.idle
+        : ScrapeState.success;
     config.errorMessage = null;
 
     await DatabaseService().updateWebDavConfig(config.toDb());
@@ -189,13 +197,7 @@ class AppState extends ChangeNotifier {
       );
 
       config.songs = audioEntries.map((entry) {
-        final nameParts = entry.name
-            .replaceAll(RegExp(r'\.[^.]+$'), '')
-            .split(' - ');
-        final title = nameParts.length >= 2
-            ? nameParts.sublist(1).join(' - ')
-            : nameParts[0];
-        final artist = nameParts.length >= 2 ? nameParts[0] : 'Unknown Artist';
+        final inferred = _inferSongNameParts(entry.name);
         final ext = entry.name.split('.').last.toUpperCase();
 
         final webDavHref = entry.path;
@@ -205,9 +207,9 @@ class AppState extends ChangeNotifier {
         return ScrapedSong(
           id: const Uuid().v4(),
           configId: config.id,
-          title: title,
-          artist: artist,
-          album: 'Unknown Album',
+          title: inferred.$1,
+          artist: inferred.$2,
+          album: inferred.$3,
           path: displayPath,
           webDavHref: webDavHref,
           remoteUrl: remoteUrl, // full URL for playback
@@ -266,34 +268,45 @@ class AppState extends ChangeNotifier {
     }
 
     _currentTrack = song;
+    _currentTrackInfo = null;
+    _playbackDiagnostics = null;
     _playbackErrorMessage = null;
     _isTrackLoading = true;
-    _playbackState = const PlaybackState.stopped();
+    _suppressAutoAdvance = true;
     _resetPlaybackProgress();
     notifyListeners();
 
     try {
       await AudioPlayer.stop();
+
+      // Extract metadata successfully *before* attempting playback
+      await _loadCurrentTrackInfo(requestSerial);
+
+      if (requestSerial != _playRequestSerial) {
+        return null;
+      }
+
+      // If extraction failed, an error message is set
+      if (_playbackErrorMessage != null) {
+        return _playbackErrorMessage;
+      }
+
       await AudioPlayer.playRemoteFile(
         url: _buildRemoteUrl(song.serverUrl, song.webDavHref),
         username: song.username,
         token: song.password,
       );
+
       if (requestSerial != _playRequestSerial) {
         return null;
       }
-      _isTrackLoading = false;
-      final progress = await AudioPlayer.getProgress();
-      syncPlaybackSnapshot(
-        state: const PlaybackState.playing(),
-        progress: progress,
-      );
       return null;
     } catch (e) {
       if (requestSerial != _playRequestSerial) {
         return null;
       }
       _isTrackLoading = false;
+      _currentTrackInfo = null;
       _playbackErrorMessage = e.toString();
       syncPlaybackSnapshot(
         state: PlaybackState.error(_playbackErrorMessage!),
@@ -351,6 +364,13 @@ class AppState extends ChangeNotifier {
   Future<void> stopPlayback() async {
     _playRequestSerial++;
     _isTrackLoading = false;
+    _suppressAutoAdvance = true;
+    _currentTrack = null;
+    _currentTrackInfo = null;
+    _playbackDiagnostics = null;
+    _playbackErrorMessage = null;
+    _playbackQueue = const [];
+    _queueIndex = -1;
     await AudioPlayer.stop();
     syncPlaybackSnapshot(
       state: const PlaybackState.stopped(),
@@ -414,6 +434,23 @@ class AppState extends ChangeNotifier {
     );
   }
 
+  void updatePlaybackDiagnostics(PlaybackDiagnostics diagnostics) {
+    final changed = _playbackDiagnostics != diagnostics;
+    _playbackDiagnostics = diagnostics;
+    if (!_suppressAutoAdvance &&
+        diagnostics.eofReached &&
+        !_isTrackLoading &&
+        _pendingSeekPositionMs == null &&
+        _playbackState is PlaybackState_Stopped &&
+        _currentTrack != null) {
+      _suppressAutoAdvance = true;
+      scheduleMicrotask(() => playNext());
+    }
+    if (changed) {
+      notifyListeners();
+    }
+  }
+
   void syncPlaybackSnapshot({
     required PlaybackState state,
     required PlaybackProgress progress,
@@ -425,19 +462,27 @@ class AppState extends ChangeNotifier {
     final previousState = _playbackState;
     final stateChanged = previousState.toString() != state.toString();
     final positionChanged =
-        _playbackPositionMs != cappedPosition || _playbackDurationMs != nextDuration;
+        _playbackPositionMs != cappedPosition ||
+        _playbackDurationMs != nextDuration;
     final hasReachedPendingSeek =
         _pendingSeekPositionMs != null &&
         nextDuration > 0 &&
         (cappedPosition - _pendingSeekPositionMs!).abs() <= 1200;
+    final hasPlayableProgress = nextDuration > 0 || cappedPosition > 0;
+    final hasReadyTrackMetadata = hasResolvedCurrentTrackMetadata;
     final loadingChanged =
         _isTrackLoading &&
         (_pendingSeekPositionMs == null
-            ? state is PlaybackState_Playing
+            ? state is PlaybackState_Playing &&
+                  hasPlayableProgress &&
+                  hasReadyTrackMetadata
             : hasReachedPendingSeek);
 
     if (_isTrackLoading &&
-        ((_pendingSeekPositionMs == null && state is PlaybackState_Playing) ||
+        ((_pendingSeekPositionMs == null &&
+                state is PlaybackState_Playing &&
+                hasPlayableProgress &&
+                hasReadyTrackMetadata) ||
             hasReachedPendingSeek)) {
       _isTrackLoading = false;
       _pendingSeekPositionMs = null;
@@ -454,10 +499,14 @@ class AppState extends ChangeNotifier {
     if (state is PlaybackState_Error) {
       _isTrackLoading = false;
       _pendingSeekPositionMs = null;
+      _playbackErrorMessage = state.field0;
+      _suppressAutoAdvance = true;
     }
-
-    if (state is PlaybackState_Stopped && previousState is PlaybackState_Playing) {
-      scheduleMicrotask(() => playNext());
+    if (state is! PlaybackState_Error && _playbackErrorMessage != null) {
+      _playbackErrorMessage = null;
+    }
+    if (state is PlaybackState_Playing || state is PlaybackState_Paused) {
+      _suppressAutoAdvance = false;
     }
 
     if (stateChanged || positionChanged || loadingChanged) {
@@ -483,14 +532,20 @@ class AppState extends ChangeNotifier {
 
   Future<void> commitSeekPreview() async {
     if (_playbackDurationMs <= 0) return;
-    final requestSerial = ++_seekRequestSerial;
     final targetPositionMs = _seekPreviewPositionMs ?? _playbackPositionMs;
+    _isSeeking = false;
+    _seekPreviewPositionMs = null;
+    await seekToPositionMs(targetPositionMs);
+  }
+
+  Future<void> seekToPositionMs(int targetPositionMs) async {
+    if (_playbackDurationMs <= 0) return;
+    final requestSerial = ++_seekRequestSerial;
     _playbackPositionMs = targetPositionMs.clamp(0, _playbackDurationMs);
     final targetPositionSnapshot = _playbackPositionMs;
     final priorState = _playbackState;
-    _isSeeking = false;
-    _seekPreviewPositionMs = null;
     _isTrackLoading = true;
+    _suppressAutoAdvance = true;
     _pendingSeekPositionMs = targetPositionSnapshot;
     notifyListeners();
     try {
@@ -502,13 +557,12 @@ class AppState extends ChangeNotifier {
       if (requestSerial != _seekRequestSerial) {
         return;
       }
-      final effectiveProgress =
-          progress.durationMs > 0
-              ? progress
-              : PlaybackProgress(
-                  positionMs: targetPositionSnapshot,
-                  durationMs: _playbackDurationMs,
-                );
+      final effectiveProgress = progress.durationMs > 0
+          ? progress
+          : PlaybackProgress(
+              positionMs: targetPositionSnapshot,
+              durationMs: _playbackDurationMs,
+            );
       syncPlaybackSnapshot(state: priorState, progress: effectiveProgress);
     } catch (e) {
       if (requestSerial != _seekRequestSerial) {
@@ -558,7 +612,9 @@ class AppState extends ChangeNotifier {
     if (songs.isEmpty) {
       return 'No tracks selected.';
     }
-    final playlistIndex = _playlists.indexWhere((playlist) => playlist.id == playlistId);
+    final playlistIndex = _playlists.indexWhere(
+      (playlist) => playlist.id == playlistId,
+    );
     if (playlistIndex == -1) {
       return 'Playlist not found.';
     }
@@ -620,7 +676,9 @@ class AppState extends ChangeNotifier {
     required String playlistId,
     required String trackId,
   }) async {
-    final playlistIndex = _playlists.indexWhere((playlist) => playlist.id == playlistId);
+    final playlistIndex = _playlists.indexWhere(
+      (playlist) => playlist.id == playlistId,
+    );
     if (playlistIndex == -1) return;
 
     final playlist = _playlists[playlistIndex];
@@ -659,6 +717,58 @@ class AppState extends ChangeNotifier {
   }
 
   String _songKey(ScrapedSong song) => '${song.serverUrl}|${song.webDavHref}';
+
+  (String, String, String) _inferSongNameParts(String fileName) {
+    final normalized = fileName.replaceAll(RegExp(r'\.[^.]+$'), '');
+    final nameParts = normalized.split(' - ');
+    final title = nameParts.length >= 2
+        ? nameParts.sublist(1).join(' - ')
+        : nameParts.first;
+    final artist = nameParts.length >= 2 ? nameParts.first : 'Unknown Artist';
+    final album = title.isNotEmpty ? title : 'Unknown Album';
+    return (title, artist, album);
+  }
+
+  Future<void> _loadCurrentTrackInfo(int requestSerial) async {
+    final track = _currentTrack;
+    if (track == null) {
+      _currentTrackInfo = null;
+      notifyListeners();
+      return;
+    }
+    try {
+      final metadata = await AudioPlayer.extractRemoteTrackInfo(
+        url: _buildRemoteUrl(track.serverUrl, track.webDavHref),
+        username: track.username,
+        token: track.password,
+      );
+      if (requestSerial != _playRequestSerial) {
+        return;
+      }
+      _currentTrackInfo = metadata;
+      _playbackErrorMessage = null;
+      if (_isTrackLoading &&
+          _pendingSeekPositionMs == null &&
+          _playbackState is PlaybackState_Playing &&
+          (_playbackDurationMs > 0 || _playbackPositionMs > 0)) {
+        _isTrackLoading = false;
+      }
+      notifyListeners();
+    } catch (error) {
+      if (requestSerial != _playRequestSerial) {
+        return;
+      }
+      _currentTrackInfo = null;
+      _playbackErrorMessage = 'Track metadata extraction failed: $error';
+      syncPlaybackSnapshot(
+        state: PlaybackState.error(_playbackErrorMessage!),
+        progress: PlaybackProgress(
+          positionMs: _playbackPositionMs,
+          durationMs: _playbackDurationMs,
+        ),
+      );
+    }
+  }
 
   int? _resolveNextIndex() {
     if (_playbackQueue.isEmpty) return null;

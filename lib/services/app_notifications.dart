@@ -131,14 +131,13 @@ class _NotificationCardState extends State<_NotificationCard>
   @override
   void initState() {
     super.initState();
-    _progressController = AnimationController(
-      vsync: this,
-      duration: _displayDuration,
-    )..addStatusListener((status) {
-        if (status == AnimationStatus.completed && !widget.closing) {
-          widget.onClose();
-        }
-      });
+    _progressController =
+        AnimationController(vsync: this, duration: _displayDuration)
+          ..addStatusListener((status) {
+            if (status == AnimationStatus.completed && !widget.closing) {
+              widget.onClose();
+            }
+          });
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
       setState(() => _visible = true);
@@ -187,7 +186,10 @@ class _NotificationCardState extends State<_NotificationCard>
               opacity: _visible ? 1 : 0,
               child: Container(
                 width: 360,
-                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 14,
+                  vertical: 12,
+                ),
                 decoration: BoxDecoration(
                   color: SciFiColors.surface,
                   border: Border.all(color: accent),
@@ -208,7 +210,7 @@ class _NotificationCardState extends State<_NotificationCard>
                         animation: _progressController,
                         builder: (context, _) {
                           return Align(
-                            alignment: Alignment.topCenter,
+                            alignment: Alignment.bottomCenter,
                             child: FractionallySizedBox(
                               heightFactor: 1 - _progressController.value,
                               child: Container(color: accent),
