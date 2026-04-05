@@ -172,7 +172,7 @@ class _DashboardViewState extends State<DashboardView> {
   }
 }
 
-class _DashboardHome extends StatelessWidget {
+class _DashboardHome extends StatefulWidget {
   final List<WebDavConfig> configs;
   final ValueChanged<String> onOpenConfig;
 
@@ -183,7 +183,29 @@ class _DashboardHome extends StatelessWidget {
   });
 
   @override
+  State<_DashboardHome> createState() => _DashboardHomeState();
+}
+
+class _DashboardHomeState extends State<_DashboardHome> {
+  final TextEditingController _searchController = TextEditingController();
+  bool _isSearchExpanded = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _searchController.text = AppState().searchQuery;
+    _isSearchExpanded = AppState().searchQuery.isNotEmpty;
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final appState = AppState();
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -224,16 +246,56 @@ class _DashboardHome extends StatelessWidget {
                   ],
                 ),
               ),
-              Text(
-                '${configs.length} NODES',
-                style: GoogleFonts.shareTechMono(color: SciFiColors.textDim),
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    '${widget.configs.length} NODES',
+                    style: GoogleFonts.shareTechMono(
+                      color: SciFiColors.textDim,
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  IconButton(
+                    icon: Icon(
+                      _isSearchExpanded ? Icons.close : Icons.search,
+                      color: _isSearchExpanded
+                          ? SciFiColors.primaryYel
+                          : SciFiColors.textDim,
+                      size: 20,
+                    ),
+                    onPressed: () {
+                      setState(() {
+                        _isSearchExpanded = !_isSearchExpanded;
+                        if (!_isSearchExpanded) {
+                          _searchController.clear();
+                          AppState().clearSearch();
+                        }
+                      });
+                    },
+                  ),
+                ],
               ),
             ],
           ),
         ),
         const SizedBox(height: 16),
+        _NbSearchBar(
+          isExpanded: _isSearchExpanded,
+          controller: _searchController,
+          hintText:
+              'GLOBAL DEEP SEARCH ACROSS ${appState.getAllScrapedSongs().length} TRACKS...',
+          onChanged: (val) => appState.searchSongs(val),
+          onClear: () {
+            _searchController.clear();
+            appState.clearSearch();
+          },
+          showClear: appState.searchQuery.isNotEmpty,
+        ),
         Expanded(
-          child: configs.isEmpty
+          child: appState.searchQuery.isNotEmpty
+              ? _buildSearchResults(appState, context)
+              : widget.configs.isEmpty
               ? Center(
                   child: Text(
                     '> NO WEBDAV SOURCES CONFIGURED\n> PROCEED TO CONFIG PANEL',
@@ -251,17 +313,54 @@ class _DashboardHome extends StatelessWidget {
                     mainAxisSpacing: 16,
                     childAspectRatio: 1.55,
                   ),
-                  itemCount: configs.length,
+                  itemCount: widget.configs.length,
                   itemBuilder: (context, index) {
-                    final config = configs[index];
+                    final config = widget.configs[index];
                     return _ConfigSummaryCard(
                       config: config,
-                      onOpen: () => onOpenConfig(config.id),
+                      onOpen: () => widget.onOpenConfig(config.id),
                     );
                   },
                 ),
         ),
       ],
+    );
+  }
+
+  Widget _buildSearchResults(AppState appState, BuildContext context) {
+    if (appState.isSearching) {
+      return const Center(
+        child: CircularProgressIndicator(color: SciFiColors.primaryYel),
+      );
+    }
+    final results = appState.searchResults;
+    if (results.isEmpty) {
+      return Center(
+        child: Text(
+          '> 0 MATCHES FOUND ACROSS NETWORK',
+          style: GoogleFonts.shareTechMono(color: SciFiColors.textDim),
+        ),
+      );
+    }
+    return ListView.separated(
+      itemCount: results.length,
+      separatorBuilder: (_, __) => const SizedBox(height: 8),
+      itemBuilder: (context, index) {
+        final song = results[index];
+        return _SongListItem(
+          song: song,
+          isSelected: false,
+          isMultiSelectMode: false,
+          onToggle: () {},
+          onPlay: () => appState.playSong(song, queue: results),
+          onAddToPlaylist: () async {
+            await showDialog<void>(
+              context: context,
+              builder: (context) => _AddToPlaylistDialog(songs: [song]),
+            );
+          },
+        );
+      },
     );
   }
 }
@@ -470,37 +569,18 @@ class _ConfigDetailViewState extends State<_ConfigDetailView> {
             ],
           ),
         ),
-        if (widget.isSearchExpanded)
-          Padding(
-            padding: const EdgeInsets.only(top: 16.0),
-            child: TextField(
-              controller: widget.searchController,
-              autofocus: true,
-              onChanged: (_) => setState(() {}),
-              style: GoogleFonts.shareTechMono(color: SciFiColors.textMain),
-              decoration: InputDecoration(
-                hintText: 'SEARCH TRACKS IN CURRENT NODE...',
-                hintStyle: GoogleFonts.shareTechMono(
-                  color: SciFiColors.gridLines,
-                ),
-                filled: true,
-                fillColor: SciFiColors.surface,
-                prefixIcon: const Icon(
-                  Icons.search,
-                  color: SciFiColors.primaryYel,
-                ),
-                enabledBorder: const OutlineInputBorder(
-                  borderSide: BorderSide(color: SciFiColors.gridLines),
-                  borderRadius: BorderRadius.zero,
-                ),
-                focusedBorder: const OutlineInputBorder(
-                  borderSide: BorderSide(color: SciFiColors.primaryYel),
-                  borderRadius: BorderRadius.zero,
-                ),
-              ),
-            ),
-          ),
         const SizedBox(height: 16),
+        _NbSearchBar(
+          isExpanded: widget.isSearchExpanded,
+          controller: widget.searchController,
+          hintText: 'SEARCH TRACKS IN CURRENT NODE...',
+          onChanged: (_) => setState(() {}),
+          onClear: () {
+            widget.searchController.clear();
+            setState(() {});
+          },
+          showClear: query.isNotEmpty,
+        ),
         Expanded(
           child: NbPanel(
             backgroundColor: SciFiColors.surface,
@@ -926,3 +1006,95 @@ extension<T> on Iterable<T> {
 }
 
 enum _SongMenuAction { select, addToPlaylist, info }
+
+class _NbSearchBar extends StatelessWidget {
+  final bool isExpanded;
+  final TextEditingController controller;
+  final String hintText;
+  final ValueChanged<String>? onChanged;
+  final VoidCallback onClear;
+  final bool showClear;
+
+  const _NbSearchBar({
+    required this.isExpanded,
+    required this.controller,
+    required this.hintText,
+    this.onChanged,
+    required this.onClear,
+    required this.showClear,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedSize(
+      duration: const Duration(milliseconds: 250),
+      curve: Curves.easeOutCubic,
+      child: isExpanded
+          ? Padding(
+              padding: const EdgeInsets.only(bottom: 16.0),
+              child: NbPanel(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 4,
+                ),
+                backgroundColor: SciFiColors.surfaceLight,
+                shadowOffset: const Offset(4, 4),
+                child: Row(
+                  children: [
+                    const Icon(
+                      Icons.search,
+                      color: SciFiColors.primaryYel,
+                      size: 20,
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: TextField(
+                        controller: controller,
+                        autofocus: true,
+                        style: GoogleFonts.shareTechMono(
+                          color: SciFiColors.textMain,
+                          fontSize: 16,
+                        ),
+                        cursorColor: SciFiColors.primaryYel,
+                        decoration: InputDecoration(
+                          hintText: hintText,
+                          hintStyle: GoogleFonts.shareTechMono(
+                            color: SciFiColors.textDim,
+                          ),
+                          border: InputBorder.none,
+                          isDense: true,
+                          contentPadding: const EdgeInsets.symmetric(
+                            vertical: 12,
+                          ),
+                        ),
+                        onChanged: onChanged,
+                      ),
+                    ),
+                    Visibility(
+                      visible: showClear,
+                      maintainSize: true,
+                      maintainAnimation: true,
+                      maintainState: true,
+                      child: IconButton(
+                        icon: const Icon(
+                          Icons.close,
+                          color: SciFiColors.textDim,
+                          size: 20,
+                        ),
+                        padding: EdgeInsets.zero,
+                        constraints: const BoxConstraints(
+                          minWidth: 32,
+                          minHeight: 32,
+                        ),
+                        onPressed: onClear,
+                        hoverColor: SciFiColors.errorRed.withValues(alpha: 0.2),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            )
+          : const SizedBox.shrink(),
+    );
+  }
+}
