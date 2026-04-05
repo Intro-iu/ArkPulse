@@ -2,62 +2,50 @@
 
 **ArkPulse** is a high-performance, scifi-industrial music player built with Flutter and Rust. It specializes in integrating remote WebDAV libraries into a seamless, high-fidelity local listening experience.
 
-## 🚀 Project Overview
-ArkPulse (codename: *The Pulse*) is designed with a "Bright Orthogonal Industrial" aesthetic. It targets users who manage large remote music collections and want a native-feeling application that bridges the gap between cloud storage and local playback.
+## 📖 Introduction
+ArkPulse (codename: *The Pulse*) is designed with a "Flat Industrial" Neo-Brutalist aesthetic. It targets users who manage large remote music collections and want a native-feeling application that bridges the gap between cloud storage and local playback.
 
 - **Frontend**: Flutter (3.2x+)
 - **Backend Core**: Rust (via `flutter_rust_bridge`)
-- **Audio Engine**: Rodio + Symphonia (Native Rust)
+- **Audio Engine**: libmpv runtime backend (Native Rust)
 - **Persistence**: SQLite (via `sqflite_common_ffi`)
 - **Connectivity**: WebDAV (BFS Recursive Listing)
 
 ---
 
-## 🛠 Features & Requirements
-### Core Functionality
-- **WebDAV Hub**: Add, edit, and persist multiple WebDAV nodes. 
-- **Recursive Listing**: High-speed Breadth-First Search (BFS) for audio files across all directory levels.
-- **Native Streaming**: Remote files are streamed directly to the native Rust audio engine with temporary file buffering for seek support.
-- **Industrial UI**: Strict 90-degree geometry, Neon Lime accents (`#C0FA4D`), and high-contrast scifi panels.
+## 📝 TODO Checklist
 
-### Interaction Chain
-1.  **Config**: `Settings` -> `Add WebDAV` -> Enter credentials (URL, User, Pass, Path).
-2.  **Sync**: `Dashboard` -> `Sync Node` -> BFS listing of `.flac`, `.mp3`, `.ogg`, etc.
-3.  **Deploy**: `Double Tap Song` -> Rust Backend downloads to temp -> Native Sink play.
-4.  **Active**: `Mini Player` / `Player View` -> Full control over playback state.
+### Core Playback & Metadata
+- [x] **WebDAV Mounts**: Support for adding, editing, and persisting multiple WebDAV node profiles.
+- [x] **Remote Streaming Playback**: Native stream fetching and high-performance caching via Rust `libmpv`.
+- [x] **Remote Metadata Extraction**: Highly efficient retrieval of ID3/MP4/Vorbis tags and covert art using `lofty` and HTTP chunk range requests without fetching the full files.
+- [x] **Lyric Integration**: Embedded/external synchronized lyric scrolling tightly bound to the player view timeline.
 
----
-
-## 🏗 Implementation Path
-- **Phase 1: Foundation**: Established the "Neon Industrial" design system and global routing.
-- **Phase 2: High-Performance Core**: Built the Rust `WebDavClient` and `AudioPlayer` with FFI bindings.
-- **Phase 3: Persistence Layer**: Integrated SQLite to store WebDAV configurations and (coming soon) metadata cache.
-- **Phase 4: Integration [Current]**: Recursive listing, remote streaming playback, and config editing.
+### UI & User Experience
+- [x] **Virtual Playlists System**: Support for creating, maintaining, and deleting local virtual playlists mapping to remote WebDAV files.
+- [x] **Neo-Brutalism Interface**: Strict flat sci-fi industrial aesthetic with mechanical interactions, responsive hover states, and dynamic glow matrices.
+- [ ] **State Persistence & Caching**: Cache traversed file trees in SQLite to avoid recurring full sweeps upon restart.
+- [ ] **Global Deep Search**: Multi-threaded fuzzy filtering across the entire synced WebDAV dashboard grid.
 
 ---
 
-## 📝 TODO List
-### Priority: High (Critical Integration)
-- [x] **Player UI Fix**: Resolve layout overflow in `PlayerView` and connect to real `AppState` track data.
-- [x] **Metadata Scraper**: Implement Rust-side ID3/Vorbis tag extraction using `symphonia`.
-- [ ] **Sync State Persistence**: Store listed songs in SQLite to avoid re-scanning on every sync.
-- [x] **Lyric Integration**: Wire the lyric scraper to the player view.
+## ⚙️ Build Instructions
 
-### Priority: Medium (UX & Organization)
-- [x] **Playlist System**: Create, rename, and manage local playlists referencing WebDAV tracks.
-- [ ] **Global Search**: Complete the dashboard search logic to filter across all synced tracks.
-- [ ] **Audio Visualizer**: Implement real-time frequency data pass-through from Rust to Flutter.
+### Core Requirements
+- **Flutter SDK**: Stable channel is recommended.
+- **Rust Toolchain**: `latest-stable` branch.
+- **LLVM**: Required by `flutter_rust_bridge` to execute underlying FFI C-binding code generation.
+- **mpv Runtime**: The native engine required at runtime. Ensure the compiled executable is bundled with the target OS library for production:
+  - Windows: `mpv-2.dll` / `libmpv-2.dll` / `mpv.dll`
+  - macOS: `libmpv.2.dylib` / `libmpv.dylib`
+  - Linux: `libmpv.so.2` / `libmpv.so`
 
-### Priority: Low (Polish)
-- [ ] **Theme Personalization**: High-contrast mode and custom "industrial accent" colors.
-- [ ] **System Notifications**: Native OS playback controls integration.
+### Windows Build Specifics
+Before executing `flutter build windows` or initiating a local Windows debug session, it is strongly advised to configure one of the following Environment Variables. Our CMake build phase extracts this variable and copies the DLL dynamically to the execution folder:
 
----
-
-## ⚙️ Development Requirements
-- **Flutter SDK**: Stable channel.
-- **Rust Toolchain**: `latest-stable`.
-- **LLVM**: Required for `flutter_rust_bridge` codegen.
-- **FFmpeg**: (Optional) for broader codec support if needed beyond Symphonia.
+- `MPV_DLL_PATH`
+  - Points to the **exact absolute path** of the required library file (e.g. `mpv-2.dll`).
+- `MPV_RUNTIME_DIR`
+  - Points to the **parent folder absolute path** containing the required dynamic linked libraries.
 
 ArkPulse // *The architecture of sound.*
