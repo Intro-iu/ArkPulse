@@ -35,17 +35,35 @@ ArkPulse (codename: *The Pulse*) is designed with a "Flat Industrial" Neo-Brutal
 - **Flutter SDK**: Stable channel is recommended.
 - **Rust Toolchain**: `latest-stable` branch.
 - **LLVM**: Required by `flutter_rust_bridge` to execute underlying FFI C-binding code generation.
-- **mpv Runtime**: The native engine required at runtime. Ensure the compiled executable is bundled with the target OS library for production:
-  - Windows: `mpv-2.dll` / `libmpv-2.dll` / `mpv.dll`
-  - macOS: `libmpv.2.dylib` / `libmpv.dylib`
-  - Linux: `libmpv.so.2` / `libmpv.so`
 
-### Windows Build Specifics
-Before executing `flutter build windows` or initiating a local Windows debug session, it is strongly advised to configure one of the following Environment Variables. Our CMake build phase extracts this variable and copies the DLL dynamically to the execution folder:
+### Platform-Specific Notes
 
-- `MPV_DLL_PATH`
-  - Points to the **exact absolute path** of the required library file (e.g. `mpv-2.dll`).
-- `MPV_RUNTIME_DIR`
-  - Points to the **parent folder absolute path** containing the required dynamic linked libraries.
+#### Windows
+No additional setup is required. The `media_kit_libs_windows_audio` plugin automatically downloads and bundles `libmpv-2.dll` into the build output during compilation.
+
+```bash
+flutter build windows
+```
+
+#### Linux
+Install the following system dependencies before building:
+
+```bash
+sudo apt install libmpv-dev mpv
+```
+
+The `media_kit_libs_linux` plugin handles linking at build time.
+
+```bash
+flutter build linux
+```
+
+#### macOS
+macOS builds require manual installation of `mpv` via Homebrew:
+
+```bash
+brew install mpv
+flutter build macos
+```
 
 ArkPulse // *The architecture of sound.*
