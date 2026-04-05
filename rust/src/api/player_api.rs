@@ -655,7 +655,18 @@ impl AudioPlayer {
 
 fn load_file(mpv: &RuntimeMpv, target: &str, options: Option<&str>) -> Result<(), String> {
     match options {
-        Some(options) => mpv.command_args(&["loadfile", target, "replace", options]),
+        Some(options) => {
+            // mpv 0.38+ inserts an index argument before per-file options.
+            // Older builds expect options in the third slot, so retry the
+            // legacy form if the newer syntax is rejected.
+            match mpv.command_args(&["loadfile", target, "replace", "-1", options]) {
+                Ok(()) => Ok(()),
+                Err(error) if error.to_ascii_lowercase().contains("invalid parameter") => {
+                    mpv.command_args(&["loadfile", target, "replace", options])
+                }
+                Err(error) => Err(error),
+            }
+        }
         None => mpv.command_args(&["loadfile", target, "replace"]),
     }
 }
