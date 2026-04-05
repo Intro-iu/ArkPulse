@@ -36,5 +36,12 @@ rust/target/
 native/target/
 **/*.pdb
 rust/src/bin/
+rust/errors*.txt
+
+# Scratch & test files
+sandbox.dart
 *.m4a
 *.png
+
+# Flutter ephemeral (auto-generated, restored by flutter pub get)
+**/flutter/ephemeral/
