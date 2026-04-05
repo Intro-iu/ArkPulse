@@ -98,24 +98,52 @@ jobs:
         run: ${{ matrix.build-cmd }}
 
       # ── Package ───────────────────────────────────────────────
-      - name: Package artifact (Windows)
+      - name: Compile Windows Installer
         if: matrix.target == 'windows'
         shell: pwsh
         run: |
-          Compress-Archive -Path "${{ matrix.output-path }}/*" `
-            -DestinationPath "${{ matrix.artifact }}-${{ env.APP_VERSION }}.zip"
+          iscc /dAppVersion=${{ env.APP_VERSION }} windows/installer.iss
+          Move-Item "windows/Output/arkpulse-windows-setup.exe" "${{ matrix.artifact }}-${{ env.APP_VERSION }}-setup.exe"
 
-      - name: Package artifact (Linux)
+      - name: Compile Linux Packages
         if: matrix.target == 'linux'
         run: |
-          tar -czf "${{ matrix.artifact }}-${{ env.APP_VERSION }}.tar.gz" \
-            -C "${{ matrix.output-path }}" .
-
-      # - name: Package artifact (macOS)
-      #   if: matrix.target == 'macos'
-      #   run: |
-      #     cd "${{ matrix.output-path }}"
-      #     zip -r "$GITHUB_WORKSPACE/${{ matrix.artifact }}-${{ env.APP_VERSION }}.zip" arkpulse.app
+          # Install fpm for native package building
+          sudo apt-get install -y ruby ruby-dev rubygems zstd
+          sudo gem install fpm
+          
+          # Setup filesystem structure
+          PKG_ROOT="linux_packaging"
+          mkdir -p $PKG_ROOT/opt/arkpulse \
+                   $PKG_ROOT/usr/share/applications \
+                   $PKG_ROOT/usr/share/pixmaps \
+                   $PKG_ROOT/usr/bin
+          
+          # Copy binary and resources
+          cp -r "${{ matrix.output-path }}"/* $PKG_ROOT/opt/arkpulse/
+          cp "macos/Runner/Assets.xcassets/AppIcon.appiconset/app_icon_256.png" $PKG_ROOT/usr/share/pixmaps/arkpulse.png
+          
+          # Create .desktop file
+          cat <<EOF > $PKG_ROOT/usr/share/applications/arkpulse.desktop
+          [Desktop Entry]
+          Name=ArkPulse
+          Exec=/opt/arkpulse/arkpulse
+          Icon=arkpulse
+          Type=Application
+          Terminal=false
+          Categories=AudioVideo;Audio;Player;
+          EOF
+          
+          # Create bin symlink
+          ln -s /opt/arkpulse/arkpulse $PKG_ROOT/usr/bin/arkpulse
+          
+          # Build .deb
+          fpm -s dir -t deb -n arkpulse -v ${{ env.APP_VERSION }} --architecture amd64 -C $PKG_ROOT .
+          mv arkpulse_${{ env.APP_VERSION }}_amd64.deb "${{ matrix.artifact }}-${{ env.APP_VERSION }}.deb"
+          
+          # Build pacman
+          fpm -s dir -t pacman -n arkpulse -v ${{ env.APP_VERSION }} --architecture x86_64 -C $PKG_ROOT .
+          mv arkpulse-${{ env.APP_VERSION }}-1-x86_64.pkg.tar.zst "${{ matrix.artifact }}-${{ env.APP_VERSION }}.pkg.tar.zst"
 
       # ── Upload build artifact ─────────────────────────────────
       - name: Upload build artifact
@@ -123,8 +151,9 @@ jobs:
         with:
           name: ${{ matrix.artifact }}-${{ env.APP_VERSION }}
           path: |
-            ${{ matrix.artifact }}-${{ env.APP_VERSION }}.zip
-            ${{ matrix.artifact }}-${{ env.APP_VERSION }}.tar.gz
+            ${{ matrix.artifact }}-${{ env.APP_VERSION }}-setup.exe
+            ${{ matrix.artifact }}-${{ env.APP_VERSION }}.deb
+            ${{ matrix.artifact }}-${{ env.APP_VERSION }}.pkg.tar.zst
           if-no-files-found: ignore
 
   # ── Release (tag-triggered only) ────────────────────────────────
