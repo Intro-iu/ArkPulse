@@ -138,11 +138,11 @@ jobs:
           ln -s /opt/arkpulse/arkpulse $PKG_ROOT/usr/bin/arkpulse
           
           # Build .deb
-          fpm -s dir -t deb -n arkpulse -v ${{ env.APP_VERSION }} --architecture amd64 -C $PKG_ROOT .
+          fpm -s dir -t deb -n arkpulse -v ${{ env.APP_VERSION }} --architecture amd64 -d "mpv" -C $PKG_ROOT .
           
           # Build pacman
           PACMAN_VER=$(echo ${{ env.APP_VERSION }} | tr '-' '.')
-          fpm -s dir -t pacman -n arkpulse -v $PACMAN_VER --architecture x86_64 -C $PKG_ROOT .
+          fpm -s dir -t pacman -n arkpulse -v $PACMAN_VER --architecture x86_64 -d "mpv" -C $PKG_ROOT .
           mv arkpulse-${PACMAN_VER}-1-x86_64.pkg.tar.zst arkpulse_${{ env.APP_VERSION }}_x86_64.pkg.tar.zst
 
       # ── Upload build artifact ─────────────────────────────────
